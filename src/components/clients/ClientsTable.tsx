@@ -88,40 +88,45 @@ export const ClientsTable = () => {
       .replace(/{contact_person}/g, client.contact_person || '');
   };
 
-  const createMailtoLink = (client: Client, template: MessageTemplate | undefined) => {
-    if (!client.email) return "#";
-    if (!template) return `mailto:${client.email}`;
+  const handleSendEmail = async (client: Client) => {
+    if (!client.email) return;
+    
+    if (!emailTemplate) {
+        window.location.href = `mailto:${client.email}`;
+        return;
+    }
 
-    const subject = template.subject ? replacePlaceholders(template.subject, client) : '';
-    const cc = template.cc || '';
+    const subject = emailTemplate.subject ? replacePlaceholders(emailTemplate.subject, client) : '';
+    const cc = emailTemplate.cc || '';
     const greeting = `السادة/ ${client.company_name}`;
-    const templateBody = template.body ? replacePlaceholders(template.body, client) : '';
+    const templateBody = emailTemplate.body ? replacePlaceholders(emailTemplate.body, client) : '';
     let body = `${greeting}\n\n${templateBody}`;
 
-    if (template.attachments && template.attachments.length > 0) {
+    if (emailTemplate.attachments && emailTemplate.attachments.length > 0) {
       body += `\n\n\nالمرفقات (للتحميل):`;
-      template.attachments.forEach(att => {
+      emailTemplate.attachments.forEach(att => {
         body += `\n- ${att.file_name}:\n${att.file_url}`;
       });
     }
-
     body = `\u200F${body}`;
-    
-    const mailtoParts = [
-        `mailto:${client.email}`,
-        `?subject=${encodeURIComponent(subject)}`,
-        cc ? `&cc=${encodeURIComponent(cc)}` : '',
-        `&body=${encodeURIComponent(body)}`
-    ];
-    
-    const mailtoLink = mailtoParts.join('');
 
-    if (mailtoLink.length > 2000) {
-        showError("محتوى البريد الإلكتروني طويل جدًا وقد لا يتم فتحه بشكل صحيح.");
-        return "#";
+    const mailtoLinkWithoutBody = `mailto:${client.email}?subject=${encodeURIComponent(subject)}&cc=${encodeURIComponent(cc)}`;
+    const mailtoLinkWithBody = `${mailtoLinkWithoutBody}&body=${encodeURIComponent(body)}`;
+
+    if (mailtoLinkWithBody.length > 2000) {
+        try {
+            await navigator.clipboard.writeText(body);
+            toast.success("تم نسخ نص الرسالة إلى الحافظة.", {
+                description: "الرجاء لصقها في برنامج البريد الإلكتروني الخاص بك.",
+            });
+        } catch (err) {
+            showError("فشل نسخ نص الرسالة. يرجى نسخها يدويًا.");
+        } finally {
+            window.location.href = mailtoLinkWithoutBody;
+        }
+    } else {
+        window.location.href = mailtoLinkWithBody;
     }
-    
-    return mailtoLink;
   };
 
   const createWhatsAppLink = (client: Client, template: MessageTemplate | undefined) => {
@@ -204,11 +209,9 @@ export const ClientsTable = () => {
                       </DropdownMenuItem>
                     </EditClientDialog>
                     {client.email && (
-                      <DropdownMenuItem asChild>
-                        <a href={createMailtoLink(client, emailTemplate)}>
-                          <Mail className="ml-2 h-4 w-4" />
-                          <span>إرسال بريد إلكتروني</span>
-                        </a>
+                      <DropdownMenuItem onClick={() => handleSendEmail(client)}>
+                        <Mail className="ml-2 h-4 w-4" />
+                        <span>إرسال بريد إلكتروني</span>
                       </DropdownMenuItem>
                     )}
                     {client.phone && (
