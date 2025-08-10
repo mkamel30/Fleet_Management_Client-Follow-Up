@@ -320,7 +320,7 @@ export const ClientsTable = () => {
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>إلغاء</Cancel>
+                            <AlertDialogCancel>إلغاء</AlertDialogCancel>
                             <AlertDialogAction onClick={() => handleWhatsAppClick(client)}>
                               متابعة
                             </AlertDialogAction>

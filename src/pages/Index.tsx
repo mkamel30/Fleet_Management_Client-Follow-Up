@@ -44,7 +44,7 @@ const Index = () => {
                 <span className="sr-only">قائمة المستخدم</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" dir="rtl">
+            <DropdownMenuContent align="end">
               <DropdownMenuLabel>حسابي</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
