@@ -213,7 +213,9 @@ const ReportsPage = () => {
             <Card>
               <CardHeader>
                 <CardTitle>توزيع العملاء حسب الحالة</CardTitle>
-                <CardDescription>نظرة عامة على حالة عملائك الحاليين.</CardDescription>
+                <CardDescription>
+                  نظرة عامة على حالة عملائك الحاليين. إجمالي العملاء: {data.totalClients}
+                </CardDescription>
               </CardHeader>
               <CardContent className="pl-2">
                 <ResponsiveContainer width="100%" height={350}>
@@ -227,11 +229,6 @@ const ReportsPage = () => {
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
-              <CardFooter className="flex justify-center">
-                <p className="text-sm font-bold text-muted-foreground">
-                  إجمالي عدد العملاء: {data.totalClients}
-                </p>
-              </CardFooter>
             </Card>
           </section>
 
