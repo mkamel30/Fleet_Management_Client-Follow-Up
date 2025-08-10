@@ -112,13 +112,6 @@ export const ClientsTable = () => {
     return `mailto:${client.email}?${params.toString()}`;
   };
 
-  const handleSendEmail = (client: Client) => {
-    const mailtoLink = createMailtoLink(client, emailTemplate);
-    if (mailtoLink !== "#") {
-      window.location.href = mailtoLink;
-    }
-  };
-
   const createWhatsAppLink = (client: Client, template: MessageTemplate | undefined) => {
     if (!client.phone) return "#";
     const formattedPhone = formatWhatsAppNumber(client.phone);
@@ -199,9 +192,11 @@ export const ClientsTable = () => {
                       </DropdownMenuItem>
                     </EditClientDialog>
                     {client.email && (
-                      <DropdownMenuItem onClick={() => handleSendEmail(client)}>
-                        <Mail className="ml-2 h-4 w-4" />
-                        <span>إرسال بريد إلكتروني</span>
+                      <DropdownMenuItem asChild>
+                        <a href={createMailtoLink(client, emailTemplate)}>
+                          <Mail className="ml-2 h-4 w-4" />
+                          <span>إرسال بريد إلكتروني</span>
+                        </a>
                       </DropdownMenuItem>
                     )}
                     {client.phone && (
