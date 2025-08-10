@@ -173,3 +173,5 @@ export const EmailTemplateForm = () => {
     </Card>
   );
 };
+
+// This is a single-line comment
