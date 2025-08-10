@@ -1,34 +1,15 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { useSession } from '@/context/SessionContext';
-import { useNavigate, Link } from 'react-router-dom';
-import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { AddClientDialog } from '@/components/clients/AddClientDialog';
 import { ClientsTable } from '@/components/clients/ClientsTable';
 import { Settings as SettingsIcon } from 'lucide-react';
 
 const Index = () => {
-  const { session, loading } = useSession();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!loading && !session) {
-      navigate('/login');
-    }
-  }, [session, loading, navigate]);
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate('/login');
+    // The SessionProvider will handle the redirect automatically.
   };
-
-  if (loading) {
-    return (
-        <div className="flex items-center justify-center h-screen">
-            <div>جاري التحميل...</div>
-        </div>
-    );
-  }
 
   return (
     <div dir="rtl" className="container mx-auto p-4 md:p-8">

@@ -1,21 +1,10 @@
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
-import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 const Login = () => {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        navigate('/');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+  // All session and redirect logic is now handled by the SessionProvider.
+  // This component is now much simpler.
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
