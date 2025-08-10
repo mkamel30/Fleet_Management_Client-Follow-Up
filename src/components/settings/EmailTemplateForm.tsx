@@ -8,6 +8,7 @@ import { MessageTemplate } from "@/types/template";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -202,8 +203,11 @@ export const EmailTemplateForm = () => {
                 <FormItem>
                   <FormLabel>نص الرسالة</FormLabel>
                   <FormControl>
-                    <Textarea rows={8} placeholder="اكتب نص رسالتك هنا..." {...field} />
+                    <Textarea rows={8} placeholder="مثال: السادة/ {company_name}، تحية طيبة وبعد..." {...field} />
                   </FormControl>
+                  <FormDescription>
+                    يمكنك استخدام المتغيرات {`{company_name}`} و {`{contact_person}`} وسيتم استبدالها تلقائيًا.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

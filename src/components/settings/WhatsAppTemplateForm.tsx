@@ -8,6 +8,7 @@ import { MessageTemplate } from "@/types/template";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -168,8 +169,11 @@ export const WhatsAppTemplateForm = () => {
                 <FormItem>
                   <FormLabel>نص الرسالة</FormLabel>
                   <FormControl>
-                    <Textarea rows={8} placeholder="اكتب نص رسالتك هنا..." {...field} />
+                    <Textarea rows={8} placeholder="مثال: مرحبًا {contact_person} من شركة {company_name}..." {...field} />
                   </FormControl>
+                  <FormDescription>
+                    يمكنك استخدام المتغيرات {`{company_name}`} و {`{contact_person}`} وسيتم استبدالها تلقائيًا.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

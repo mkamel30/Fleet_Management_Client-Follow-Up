@@ -89,18 +89,22 @@ export const ClientsTable = () => {
   };
 
   const handleSendEmail = async (client: Client) => {
-    if (!client.email) return;
+    if (!client.email) {
+      showError("لا يوجد بريد إلكتروني لهذا العميل.");
+      return;
+    }
     
-    if (!emailTemplate) {
+    if (!emailTemplate || !emailTemplate.body) {
+        toast.info("لا يوجد قالب بريد إلكتروني محفوظ.", {
+            description: "سيتم فتح بريد إلكتروني فارغ. يمكنك إنشاء قالب من صفحة الإعدادات.",
+        });
         window.location.href = `mailto:${client.email}`;
         return;
     }
 
     const subject = emailTemplate.subject ? replacePlaceholders(emailTemplate.subject, client) : '';
     const cc = emailTemplate.cc || '';
-    const greeting = `السادة/ ${client.company_name}`;
-    const templateBody = emailTemplate.body ? replacePlaceholders(emailTemplate.body, client) : '';
-    let body = `${greeting}\n\n${templateBody}`;
+    let body = emailTemplate.body ? replacePlaceholders(emailTemplate.body, client) : '';
 
     if (emailTemplate.attachments && emailTemplate.attachments.length > 0) {
       body += `\n\n\nالمرفقات (للتحميل):`;
@@ -108,7 +112,6 @@ export const ClientsTable = () => {
         body += `\n- ${att.file_name}:\n${att.file_url}`;
       });
     }
-    body = `\u200F${body}`;
 
     const mailtoLinkWithoutBody = `mailto:${client.email}?subject=${encodeURIComponent(subject)}&cc=${encodeURIComponent(cc)}`;
     const mailtoLinkWithBody = `${mailtoLinkWithoutBody}&body=${encodeURIComponent(body)}`;
