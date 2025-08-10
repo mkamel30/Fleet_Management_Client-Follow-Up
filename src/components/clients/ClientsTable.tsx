@@ -106,15 +106,11 @@ export const ClientsTable = () => {
       });
     }
 
+    // Add RTL mark to ensure correct direction in email clients
     body = `\u200F${body}`;
     params.append('body', body);
 
     return `mailto:${client.email}?${params.toString()}`;
-  };
-
-  const handleSendEmail = (client: Client) => {
-    const mailtoLink = createMailtoLink(client, emailTemplate);
-    window.location.href = mailtoLink;
   };
 
   const createWhatsAppLink = (client: Client, template: MessageTemplate | undefined) => {
@@ -197,9 +193,11 @@ export const ClientsTable = () => {
                       </DropdownMenuItem>
                     </EditClientDialog>
                     {client.email && (
-                      <DropdownMenuItem onClick={() => handleSendEmail(client)}>
-                        <Mail className="ml-2 h-4 w-4" />
-                        <span>إرسال بريد إلكتروني</span>
+                      <DropdownMenuItem asChild>
+                        <a href={createMailtoLink(client, emailTemplate)}>
+                          <Mail className="ml-2 h-4 w-4" />
+                          <span>إرسال بريد إلكتروني</span>
+                        </a>
                       </DropdownMenuItem>
                     )}
                     {client.phone && (
