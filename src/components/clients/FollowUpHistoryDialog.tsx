@@ -23,12 +23,15 @@ interface FollowUpHistoryDialogProps {
 const fetchFollowUps = async (clientId: string): Promise<FollowUp[]> => {
     const { data, error } = await supabase
         .from('follow_ups')
-        .select('*, user:profiles!inner(full_name)')
+        .select('*, user:profiles!left(full_name)')
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
 
-    if (error) throw new Error(error.message);
-    return data as FollowUp[];
+    if (error) {
+        console.error("Error fetching follow-up history:", error);
+        throw new Error(error.message);
+    }
+    return (data as FollowUp[]) || [];
 }
 
 export const FollowUpHistoryDialog = ({ client, children }: FollowUpHistoryDialogProps) => {
