@@ -27,7 +27,7 @@ import { MoreHorizontal, Edit, Trash2, Mail, MessageSquare } from "lucide-react"
 import { EditClientDialog } from "./EditClientDialog";
 import { DeleteClientAlert } from "./DeleteClientAlert";
 import { toast } from "sonner";
-import { showError } from "@/utils/toast";
+import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
 
 const fetchClients = async (userId: string): Promise<Client[]> => {
   const { data, error } = await supabase
@@ -96,39 +96,50 @@ export const ClientsTable = () => {
     
     if (!emailTemplate || !emailTemplate.body) {
         toast.info("لا يوجد قالب بريد إلكتروني محفوظ.", {
-            description: "سيتم فتح بريد إلكتروني فارغ. يمكنك إنشاء قالب من صفحة الإعدادات.",
+            description: "لا يمكن إرسال بريد إلكتروني فارغ من الخادم. يرجى إنشاء قالب من صفحة الإعدادات.",
         });
-        window.location.href = `mailto:${client.email}`;
         return;
     }
 
-    const subject = emailTemplate.subject ? replacePlaceholders(emailTemplate.subject, client) : '';
-    const cc = emailTemplate.cc || '';
-    let body = emailTemplate.body ? replacePlaceholders(emailTemplate.body, client) : '';
+    const loadingToast = showLoading("جاري إرسال البريد الإلكتروني...");
 
-    if (emailTemplate.attachments && emailTemplate.attachments.length > 0) {
-      body += `\n\n\nالمرفقات (للتحميل):`;
-      emailTemplate.attachments.forEach(att => {
-        body += `\n- ${att.file_name}:\n${att.file_url}`;
-      });
-    }
+    try {
+        const subject = emailTemplate.subject ? replacePlaceholders(emailTemplate.subject, client) : '';
+        const cc = emailTemplate.cc || '';
+        let body = emailTemplate.body ? replacePlaceholders(emailTemplate.body, client) : '';
 
-    const mailtoLinkWithoutBody = `mailto:${client.email}?subject=${encodeURIComponent(subject)}&cc=${encodeURIComponent(cc)}`;
-    const mailtoLinkWithBody = `${mailtoLinkWithoutBody}&body=${encodeURIComponent(body)}`;
-
-    if (mailtoLinkWithBody.length > 2000) {
-        try {
-            await navigator.clipboard.writeText(body);
-            toast.success("تم نسخ نص الرسالة إلى الحافظة.", {
-                description: "الرجاء لصقها في برنامج البريد الإلكتروني الخاص بك.",
-            });
-        } catch (err) {
-            showError("فشل نسخ نص الرسالة. يرجى نسخها يدويًا.");
-        } finally {
-            window.location.href = mailtoLinkWithoutBody;
+        if (emailTemplate.attachments && emailTemplate.attachments.length > 0) {
+          body += `\n\n\nالمرفقات (للتحميل):`;
+          emailTemplate.attachments.forEach(att => {
+            body += `\n- ${att.file_name}:\n${att.file_url}`;
+          });
         }
-    } else {
-        window.location.href = mailtoLinkWithBody;
+
+        const { data, error } = await supabase.functions.invoke('send-email', {
+            body: {
+                to: client.email,
+                cc: cc,
+                subject: subject,
+                body: body,
+            },
+        });
+
+        dismissToast(loadingToast);
+
+        if (error) {
+            throw new Error(error.message);
+        }
+        
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        showSuccess("تم إرسال البريد الإلكتروني بنجاح!");
+
+    } catch (error: any) {
+        dismissToast(loadingToast);
+        console.error("Failed to send email:", error);
+        showError(`فشل إرسال البريد الإلكتروني: ${error.message}`);
     }
   };
 
