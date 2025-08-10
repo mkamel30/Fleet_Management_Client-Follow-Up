@@ -1,16 +1,24 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/SessionContext";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, FileDown, Users, Target, CheckCircle, Activity, UserPlus, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, Cell } from 'recharts';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import { downloadCSV } from "@/lib/csv";
 import { showError, showLoading, dismissToast, showSuccess } from "@/utils/toast";
 import { Separator } from "@/components/ui/separator";
+
+const STATUS_COLORS: { [key: string]: string } = {
+  'تم التعاقد': 'hsl(var(--success))',
+  'لا يرغب': 'hsl(var(--destructive))',
+  'متابعة مستمرة': '#f59e0b', // Corresponds to bg-yellow-500
+  'تواصل لاحقاً': '#a855f7', // Corresponds to bg-purple-500
+  'جديد': 'hsl(var(--accent))',
+};
 
 const fetchAnalyticsData = async (userId: string) => {
   const { data: clients, error: clientsError } = await supabase
@@ -46,7 +54,11 @@ const fetchAnalyticsData = async (userId: string) => {
   const newClients = clientsByStatus['جديد'] || 0;
   const contactLaterClients = clientsByStatus['تواصل لاحقاً'] || 0;
 
-  const chartData = Object.entries(clientsByStatus).map(([name, value]) => ({ name, 'عدد العملاء': value }));
+  const chartData = Object.entries(clientsByStatus).map(([name, value]) => ({
+    name,
+    'عدد العملاء': value,
+    fill: STATUS_COLORS[name] || 'hsl(var(--primary))',
+  }));
 
   return {
     totalClients,
@@ -225,8 +237,11 @@ const ReportsPage = () => {
                     <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
                     <Tooltip wrapperClassName="!bg-background !border-border" cursor={{ fill: 'hsl(var(--muted))' }} />
                     <Legend />
-                    <Bar dataKey="عدد العملاء" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]}>
+                    <Bar dataKey="عدد العملاء" radius={[4, 4, 0, 0]}>
                       <LabelList dataKey="عدد العملاء" position="top" style={{ fill: 'hsl(var(--foreground))', fontSize: 12 }} />
+                      {data.chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
