@@ -25,6 +25,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MoreHorizontal, Edit, Trash2, Mail, MessageSquare } from "lucide-react";
 import { EditClientDialog } from "./EditClientDialog";
 import { DeleteClientAlert } from "./DeleteClientAlert";
+import { MessageTemplate } from "@/types/template";
+import { showError } from "@/utils/toast";
 
 const fetchClients = async (userId: string): Promise<Client[]> => {
   const { data, error } = await supabase
@@ -34,6 +36,20 @@ const fetchClients = async (userId: string): Promise<Client[]> => {
     .order("created_at", { ascending: false });
 
   if (error) {
+    throw new Error(error.message);
+  }
+  return data;
+};
+
+const fetchTemplate = async (userId: string, type: 'email' | 'whatsapp'): Promise<MessageTemplate | null> => {
+  const { data, error } = await supabase
+    .from("message_templates")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("type", type)
+    .single();
+
+  if (error && error.code !== "PGRST116") {
     throw new Error(error.message);
   }
   return data;
@@ -52,22 +68,73 @@ export const ClientsTable = () => {
     enabled: !!session?.user?.id,
   });
 
-  const formatWhatsAppNumber = (phone: string) => {
-    // Remove any non-digit characters from the phone number
-    let cleaned = phone.replace(/\D/g, '');
+  const { data: emailTemplate } = useQuery({
+    queryKey: ["emailTemplate", session?.user?.id],
+    queryFn: () => fetchTemplate(session!.user!.id, 'email'),
+    enabled: !!session?.user?.id,
+  });
 
-    // If the number already includes the country code for Egypt, return it as is.
+  const { data: whatsappTemplate } = useQuery({
+    queryKey: ["whatsappTemplate", session?.user?.id],
+    queryFn: () => fetchTemplate(session!.user!.id, 'whatsapp'),
+    enabled: !!session?.user?.id,
+  });
+
+  const formatWhatsAppNumber = (phone: string) => {
+    let cleaned = phone.replace(/\D/g, '');
     if (cleaned.startsWith('20')) {
       return cleaned;
     }
-
-    // If the number starts with a '0' (common for local formats), remove it.
     if (cleaned.startsWith('0')) {
       cleaned = cleaned.substring(1);
     }
-    
-    // Prepend '20' for Egypt's country code, assuming user meant +20.
     return `20${cleaned}`;
+  };
+
+  const replacePlaceholders = (text: string | null, client: Client): string => {
+    if (!text) return "";
+    return text
+      .replace(/{company_name}/g, client.company_name || '')
+      .replace(/{contact_person}/g, client.contact_person || '')
+      .replace(/{phone}/g, client.phone || '')
+      .replace(/{email}/g, client.email || '')
+      .replace(/{number_of_cars}/g, client.number_of_cars?.toString() || '')
+      .replace(/{fuel_type}/g, client.fuel_type || '');
+  };
+
+  const handleSendEmail = (client: Client) => {
+    if (!client.email) return;
+    if (!emailTemplate || !emailTemplate.body) {
+        showError("الرجاء إعداد قالب البريد الإلكتروني أولاً في صفحة الإعدادات.");
+        return;
+    }
+
+    let body = replacePlaceholders(emailTemplate.body, client);
+    if (emailTemplate.attachment_url) {
+        body += `\n\nالمرفق: ${emailTemplate.attachment_url}`;
+    }
+
+    const subject = replacePlaceholders(emailTemplate.subject, client);
+    const cc = emailTemplate.cc || '';
+
+    const mailtoLink = `mailto:${client.email}?subject=${encodeURIComponent(subject)}&cc=${encodeURIComponent(cc)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailtoLink;
+  };
+
+  const handleSendWhatsApp = (client: Client) => {
+    if (!client.phone) return;
+    if (!whatsappTemplate || !whatsappTemplate.body) {
+        showError("الرجاء إعداد قالب واتساب أولاً في صفحة الإعدادات.");
+        return;
+    }
+
+    let body = replacePlaceholders(whatsappTemplate.body, client);
+    if (whatsappTemplate.attachment_url) {
+        body += `\n\nالمرفق: ${whatsappTemplate.attachment_url}`;
+    }
+
+    const whatsappLink = `https://wa.me/${formatWhatsAppNumber(client.phone)}?text=${encodeURIComponent(body)}`;
+    window.open(whatsappLink, '_blank', 'noopener,noreferrer');
   };
 
   if (isLoading) {
@@ -130,19 +197,15 @@ export const ClientsTable = () => {
                       </DropdownMenuItem>
                     </EditClientDialog>
                     {client.email && (
-                      <DropdownMenuItem asChild>
-                        <a href={`mailto:${client.email}`}>
-                          <Mail className="ml-2 h-4 w-4" />
-                          <span>إرسال بريد إلكتروني</span>
-                        </a>
+                      <DropdownMenuItem onClick={() => handleSendEmail(client)}>
+                        <Mail className="ml-2 h-4 w-4" />
+                        <span>إرسال بريد إلكتروني</span>
                       </DropdownMenuItem>
                     )}
                     {client.phone && (
-                       <DropdownMenuItem asChild>
-                        <a href={`https://wa.me/${formatWhatsAppNumber(client.phone)}`} target="_blank" rel="noopener noreferrer">
+                       <DropdownMenuItem onClick={() => handleSendWhatsApp(client)}>
                           <MessageSquare className="ml-2 h-4 w-4" />
                           <span>إرسال واتساب</span>
-                        </a>
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />
