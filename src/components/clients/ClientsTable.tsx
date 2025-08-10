@@ -114,26 +114,14 @@ export const ClientsTable = () => {
         `&body=${encodeURIComponent(body)}`
     ];
     
-    return mailtoParts.join('');
-  };
+    const mailtoLink = mailtoParts.join('');
 
-  const handleSendEmailClick = (e: React.MouseEvent<HTMLAnchorElement>, client: Client) => {
-    const mailtoLink = createMailtoLink(client, emailTemplate);
     if (mailtoLink.length > 2000) {
-        e.preventDefault();
         showError("محتوى البريد الإلكتروني طويل جدًا وقد لا يتم فتحه بشكل صحيح.");
-        return;
+        return "#";
     }
-
-    if (emailTemplate?.attachments && emailTemplate.attachments.length > 0) {
-      toast("سيتم فتح برنامج البريد الإلكتروني الخاص بك.", {
-        description: "تمت إضافة رابط لتحميل المرفق في نص الرسالة.",
-        action: {
-          label: "حسناً",
-          onClick: () => {},
-        },
-      });
-    }
+    
+    return mailtoLink;
   };
 
   const createWhatsAppLink = (client: Client, template: MessageTemplate | undefined) => {
@@ -217,7 +205,7 @@ export const ClientsTable = () => {
                     </EditClientDialog>
                     {client.email && (
                       <DropdownMenuItem asChild>
-                        <a href={createMailtoLink(client, emailTemplate)} onClick={(e) => handleSendEmailClick(e, client)}>
+                        <a href={createMailtoLink(client, emailTemplate)}>
                           <Mail className="ml-2 h-4 w-4" />
                           <span>إرسال بريد إلكتروني</span>
                         </a>
