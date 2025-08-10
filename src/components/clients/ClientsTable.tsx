@@ -62,6 +62,22 @@ const fetchTemplates = async (userId: string): Promise<MessageTemplate[]> => {
   return (data as MessageTemplate[]) || [];
 };
 
+const getStatusBadgeClass = (status: string | null) => {
+  switch (status) {
+    case 'تم التعاقد':
+      return 'bg-success text-success-foreground hover:bg-success/90 border-transparent';
+    case 'لا يرغب':
+      return 'bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent';
+    case 'متابعة مستمرة':
+      return 'bg-yellow-500 text-white hover:bg-yellow-500/90 border-transparent';
+    case 'تواصل لاحقاً':
+      return 'bg-purple-500 text-white hover:bg-purple-500/90 border-transparent';
+    case 'جديد':
+    default:
+      return 'bg-accent text-accent-foreground hover:bg-accent/90 border-transparent';
+  }
+};
+
 export const ClientsTable = () => {
   const { session } = useSession();
   const queryClient = useQueryClient();
@@ -231,7 +247,9 @@ export const ClientsTable = () => {
               <TableCell>{client.number_of_cars || "-"}</TableCell>
               <TableCell>{client.fuel_type || "-"}</TableCell>
               <TableCell>
-                <Badge>{client.status || "جديد"}</Badge>
+                <Badge className={getStatusBadgeClass(client.status)}>
+                  {client.status || "جديد"}
+                </Badge>
               </TableCell>
               <TableCell>
                 <DropdownMenu>
@@ -302,7 +320,7 @@ export const ClientsTable = () => {
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                            <AlertDialogCancel>إلغاء</Cancel>
                             <AlertDialogAction onClick={() => handleWhatsAppClick(client)}>
                               متابعة
                             </AlertDialogAction>
