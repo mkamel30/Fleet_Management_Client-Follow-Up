@@ -218,7 +218,7 @@ export const ClientsTable = () => {
                       </DropdownMenuItem>
                     </EditClientDialog>
                     {client.email && (
-                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} onClick={() => handleSendEmail(client)}>
+                      <DropdownMenuItem onClick={() => handleSendEmail(client)}>
                         <Mail className="ml-2 h-4 w-4" />
                         <span>إرسال بريد إلكتروني</span>
                       </DropdownMenuItem>
