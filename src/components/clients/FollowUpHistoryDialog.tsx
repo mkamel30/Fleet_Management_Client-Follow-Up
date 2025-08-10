@@ -22,8 +22,8 @@ interface FollowUpHistoryDialogProps {
 
 const fetchFollowUps = async (clientId: string): Promise<FollowUp[]> => {
     const { data, error } = await supabase
-        .from('follow_ups')
-        .select('*, profiles!left(full_name)')
+        .from('follow_ups_with_user') // Querying the new view
+        .select('*')
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
 
@@ -69,7 +69,7 @@ export const FollowUpHistoryDialog = ({ client, children }: FollowUpHistoryDialo
                   </div>
                   <p className="mb-2">{followUp.feedback}</p>
                   <div className="text-xs text-gray-400 flex justify-between items-center">
-                    <span>بواسطة: {followUp.profiles?.full_name || 'غير معروف'}</span>
+                    <span>بواسطة: {followUp.full_name || 'غير معروف'}</span>
                     {followUp.next_follow_up_date && (
                         <span>
                             المتابعة التالية: {format(new Date(followUp.next_follow_up_date), "d MMMM yyyy", { locale: arSA })}

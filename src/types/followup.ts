@@ -6,5 +6,5 @@ export interface FollowUp {
   status: string;
   next_follow_up_date: string | null;
   created_at: string;
-  profiles?: { full_name: string | null };
+  full_name: string | null;
 }
