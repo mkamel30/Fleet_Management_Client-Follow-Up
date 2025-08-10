@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -92,11 +93,19 @@ export const WhatsAppTemplateForm = () => {
 
   const form = useForm<WhatsAppFormValues>({
     resolver: zodResolver(whatsappSchema),
-    values: {
-      body: template?.body || "",
+    defaultValues: {
+      body: "",
       attachments: undefined,
-    }
+    },
   });
+
+  useEffect(() => {
+    if (template) {
+      form.reset({
+        body: template.body || "",
+      });
+    }
+  }, [template, form]);
 
   const mutation = useMutation({
     mutationFn: (values: WhatsAppFormValues) => upsertWhatsAppTemplate({ userId: session!.user!.id, values }),

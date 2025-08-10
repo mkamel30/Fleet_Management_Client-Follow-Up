@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -94,13 +95,23 @@ export const EmailTemplateForm = () => {
 
   const form = useForm<EmailFormValues>({
     resolver: zodResolver(emailSchema),
-    values: {
-      subject: template?.subject || "",
-      cc: template?.cc || "",
-      body: template?.body || "",
+    defaultValues: {
+      subject: "",
+      cc: "",
+      body: "",
       attachments: undefined,
-    }
+    },
   });
+
+  useEffect(() => {
+    if (template) {
+      form.reset({
+        subject: template.subject || "",
+        cc: template.cc || "",
+        body: template.body || "",
+      });
+    }
+  }, [template, form]);
 
   const mutation = useMutation({
     mutationFn: (values: EmailFormValues) => upsertEmailTemplate({ userId: session!.user!.id, values }),
