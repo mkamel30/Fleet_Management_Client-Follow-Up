@@ -26,8 +26,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MoreHorizontal, Edit, Trash2, Mail, MessageSquare } from "lucide-react";
 import { EditClientDialog } from "./EditClientDialog";
 import { DeleteClientAlert } from "./DeleteClientAlert";
-import { toast } from "sonner";
-import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
 
 const fetchClients = async (userId: string): Promise<Client[]> => {
   const { data, error } = await supabase
@@ -88,77 +86,31 @@ export const ClientsTable = () => {
       .replace(/{contact_person}/g, client.contact_person || '');
   };
 
-  const handleSendEmail = async (client: Client) => {
-    if (!client.email) {
-      showError("لا يوجد بريد إلكتروني لهذا العميل.");
-      return;
-    }
+  const createMailtoLink = (client: Client, template: MessageTemplate | undefined) => {
+    if (!client.email) return "#";
     
-    if (!emailTemplate || !emailTemplate.body) {
-        toast.info("لا يوجد قالب بريد إلكتروني محفوظ.", {
-            description: "لا يمكن إرسال بريد إلكتروني فارغ من الخادم. يرجى إنشاء قالب من صفحة الإعدادات.",
-        });
-        return;
+    const mailtoBase = `mailto:${client.email}`;
+    
+    if (!template || !template.body) {
+        return mailtoBase;
     }
 
-    const loadingToast = showLoading("جاري إرسال البريد الإلكتروني...");
+    const subject = template.subject ? replacePlaceholders(template.subject, client) : '';
+    let body = template.body ? replacePlaceholders(template.body, client) : '';
 
-    try {
-        const subject = emailTemplate.subject ? replacePlaceholders(emailTemplate.subject, client) : '';
-        const cc = emailTemplate.cc || '';
-        let body = emailTemplate.body ? replacePlaceholders(emailTemplate.body, client) : '';
-
-        if (emailTemplate.attachments && emailTemplate.attachments.length > 0) {
-          body += `\n\n\nالمرفقات (للتحميل):`;
-          emailTemplate.attachments.forEach(att => {
-            body += `\n- ${att.file_name}:\n${att.file_url}`;
-          });
-        }
-
-        const { data, error } = await supabase.functions.invoke('send-email', {
-            body: {
-                to: client.email,
-                cc: cc,
-                subject: subject,
-                body: body,
-            },
-        });
-
-        if (error) {
-            dismissToast(loadingToast);
-            console.error("Edge function error:", error);
-            
-            let errorMessage = error.message;
-            // Check if we can get a more specific message from the function's response
-            if ('context' in error && error.context && typeof error.context.json === 'function') {
-                try {
-                    const errorData = await error.context.json();
-                    if (errorData.error) {
-                        errorMessage = errorData.error;
-                    }
-                } catch (e) {
-                    console.error("Could not parse JSON from error response:", e);
-                }
-            }
-            
-            showError(`فشل إرسال البريد الإلكتروني: ${errorMessage}`);
-            return;
-        }
-        
-        if (data.error) {
-            dismissToast(loadingToast);
-            showError(`فشل إرسال البريد الإلكتروني: ${data.error}`);
-            return;
-        }
-
-        dismissToast(loadingToast);
-        showSuccess("تم إرسال البريد الإلكتروني بنجاح!");
-
-    } catch (unexpectedError: any) {
-        dismissToast(loadingToast);
-        console.error("An unexpected error occurred in handleSendEmail:", unexpectedError);
-        showError(`حدث خطأ غير متوقع: ${unexpectedError.message}`);
+    if (template.attachments && template.attachments.length > 0) {
+      body += `\n\n\nالمرفقات (للتحميل):`;
+      template.attachments.forEach(att => {
+        body += `\n- ${att.file_name}:\n${att.file_url}`;
+      });
     }
+
+    const params = new URLSearchParams();
+    if (subject) params.append('subject', subject);
+    if (template.cc) params.append('cc', template.cc);
+    if (body) params.append('body', body);
+
+    return `${mailtoBase}?${params.toString()}`;
   };
 
   const createWhatsAppLink = (client: Client, template: MessageTemplate | undefined) => {
@@ -241,9 +193,11 @@ export const ClientsTable = () => {
                       </DropdownMenuItem>
                     </EditClientDialog>
                     {client.email && (
-                      <DropdownMenuItem onClick={() => handleSendEmail(client)}>
-                        <Mail className="ml-2 h-4 w-4" />
-                        <span>إرسال بريد إلكتروني</span>
+                      <DropdownMenuItem asChild>
+                        <a href={createMailtoLink(client, emailTemplate)}>
+                          <Mail className="ml-2 h-4 w-4" />
+                          <span>إرسال بريد إلكتروني</span>
+                        </a>
                       </DropdownMenuItem>
                     )}
                     {client.phone && (
