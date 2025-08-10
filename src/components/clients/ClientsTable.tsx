@@ -35,24 +35,20 @@ const fetchClients = async (userId: string): Promise<Client[]> => {
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
-  if (error) {
-    throw new Error(error.message);
-  }
+  if (error) throw new Error(error.message);
   return data;
 };
 
 const fetchTemplate = async (userId: string, type: 'email' | 'whatsapp'): Promise<MessageTemplate | null> => {
   const { data, error } = await supabase
     .from("message_templates")
-    .select("*")
+    .select("*, attachments:template_attachments(*)")
     .eq("user_id", userId)
     .eq("type", type)
     .single();
 
-  if (error && error.code !== "PGRST116") {
-    throw new Error(error.message);
-  }
-  return data;
+  if (error && error.code !== "PGRST116") throw new Error(error.message);
+  return data as MessageTemplate | null;
 };
 
 export const ClientsTable = () => {
@@ -82,12 +78,8 @@ export const ClientsTable = () => {
 
   const formatWhatsAppNumber = (phone: string) => {
     let cleaned = phone.replace(/\D/g, '');
-    if (cleaned.startsWith('20')) {
-      return cleaned;
-    }
-    if (cleaned.startsWith('0')) {
-      cleaned = cleaned.substring(1);
-    }
+    if (cleaned.startsWith('20')) return cleaned;
+    if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
     return `20${cleaned}`;
   };
 
@@ -105,18 +97,18 @@ export const ClientsTable = () => {
   const handleSendEmail = (client: Client) => {
     if (!client.email) return;
     if (!emailTemplate || !emailTemplate.body) {
-        showError("الرجاء إعداد قالب البريد الإلكتروني أولاً في صفحة الإعدادات.");
-        return;
+      showError("الرجاء إعداد قالب البريد الإلكتروني أولاً في صفحة الإعدادات.");
+      return;
     }
 
     let body = replacePlaceholders(emailTemplate.body, client);
-    if (emailTemplate.attachment_url) {
-        body += `\n\nالمرفق: ${emailTemplate.attachment_url}`;
+    if (emailTemplate.attachments && emailTemplate.attachments.length > 0) {
+      const attachmentLinks = emailTemplate.attachments.map(att => att.file_url).join('\n');
+      body += `\n\nالمرفقات:\n${attachmentLinks}`;
     }
 
     const subject = replacePlaceholders(emailTemplate.subject, client);
     const cc = emailTemplate.cc || '';
-
     const mailtoLink = `mailto:${client.email}?subject=${encodeURIComponent(subject)}&cc=${encodeURIComponent(cc)}&body=${encodeURIComponent(body)}`;
     window.location.href = mailtoLink;
   };
@@ -124,13 +116,14 @@ export const ClientsTable = () => {
   const handleSendWhatsApp = (client: Client) => {
     if (!client.phone) return;
     if (!whatsappTemplate || !whatsappTemplate.body) {
-        showError("الرجاء إعداد قالب واتساب أولاً في صفحة الإعدادات.");
-        return;
+      showError("الرجاء إعداد قالب واتساب أولاً في صفحة الإعدادات.");
+      return;
     }
 
     let body = replacePlaceholders(whatsappTemplate.body, client);
-    if (whatsappTemplate.attachment_url) {
-        body += `\n\nالمرفق: ${whatsappTemplate.attachment_url}`;
+    if (whatsappTemplate.attachments && whatsappTemplate.attachments.length > 0) {
+      const attachmentLinks = whatsappTemplate.attachments.map(att => att.file_url).join('\n');
+      body += `\n\nالمرفقات:\n${attachmentLinks}`;
     }
 
     const whatsappLink = `https://wa.me/${formatWhatsAppNumber(client.phone)}?text=${encodeURIComponent(body)}`;

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/SessionContext";
-import { MessageTemplate } from "@/types/template";
+import { MessageTemplate, TemplateAttachment } from "@/types/template";
 import {
   Form,
   FormControl,
@@ -19,14 +19,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { showSuccess, showError } from "@/utils/toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
-import { X } from "lucide-react";
+import { X, Paperclip } from "lucide-react";
 
 const emailSchema = z.object({
   subject: z.string().min(1, "الموضوع مطلوب"),
   cc: z.string().optional(),
   body: z.string().min(1, "نص الرسالة مطلوب"),
-  attachment: z.instanceof(FileList).optional(),
+  attachments: z.instanceof(FileList).optional(),
 });
 
 type EmailFormValues = z.infer<typeof emailSchema>;
@@ -34,54 +33,54 @@ type EmailFormValues = z.infer<typeof emailSchema>;
 const fetchEmailTemplate = async (userId: string): Promise<MessageTemplate | null> => {
   const { data, error } = await supabase
     .from("message_templates")
-    .select("*")
+    .select("*, attachments:template_attachments(*)")
     .eq("user_id", userId)
     .eq("type", "email")
     .single();
 
-  if (error && error.code !== "PGRST116") {
-    throw new Error(error.message);
+  if (error && error.code !== "PGRST116") throw new Error(error.message);
+  return data as MessageTemplate | null;
+};
+
+const upsertEmailTemplate = async ({ userId, values }: { userId: string; values: EmailFormValues }) => {
+  const { data: templateData, error: templateError } = await supabase
+    .from("message_templates")
+    .upsert({ user_id: userId, type: "email", subject: values.subject, cc: values.cc, body: values.body }, { onConflict: 'user_id,type' })
+    .select()
+    .single();
+
+  if (templateError) throw new Error(templateError.message);
+  const templateId = templateData.id;
+
+  const files = values.attachments;
+  if (files && files.length > 0) {
+    const newAttachments = Array.from(files).map(file => ({
+      file,
+      filePath: `${userId}/${templateId}/${Date.now()}_${file.name}`,
+    }));
+
+    const uploadPromises = newAttachments.map(({ file, filePath }) =>
+      supabase.storage.from('message_attachments').upload(filePath, file)
+    );
+    const uploadResults = await Promise.all(uploadPromises);
+
+    const uploadErrors = uploadResults.filter(result => result.error);
+    if (uploadErrors.length > 0) throw new Error(`Failed to upload files: ${uploadErrors.map(e => e.error?.message).join(', ')}`);
+
+    const attachmentRecords = newAttachments.map(({ file, filePath }) => {
+      const { data: { publicUrl } } = supabase.storage.from('message_attachments').getPublicUrl(filePath);
+      return { template_id: templateId, user_id: userId, file_name: file.name, file_url: publicUrl, file_path: filePath };
+    });
+
+    const { error: insertError } = await supabase.from('template_attachments').insert(attachmentRecords);
+    if (insertError) throw new Error(insertError.message);
   }
-  return data;
 };
 
-const upsertEmailTemplate = async ({ userId, values, currentTemplate }: { userId: string; values: EmailFormValues, currentTemplate: MessageTemplate | null }) => {
-    let attachment_url = currentTemplate?.attachment_url || null;
-    let attachment_name = currentTemplate?.attachment_name || null;
-    const file = values.attachment?.[0];
-
-    if (file) {
-        if (currentTemplate?.attachment_url) {
-            const oldFilePath = new URL(currentTemplate.attachment_url).pathname.split('/message_attachments/')[1];
-            await supabase.storage.from('message_attachments').remove([oldFilePath]);
-        }
-        const filePath = `${userId}/${Date.now()}_${file.name}`;
-        const { error: uploadError } = await supabase.storage.from('message_attachments').upload(filePath, file);
-        if (uploadError) throw new Error(`Upload error: ${uploadError.message}`);
-        const { data: urlData } = supabase.storage.from('message_attachments').getPublicUrl(filePath);
-        attachment_url = urlData.publicUrl;
-        attachment_name = file.name;
-    }
-
-    const { error } = await supabase.from("message_templates").upsert({
-        user_id: userId,
-        type: "email",
-        subject: values.subject,
-        cc: values.cc,
-        body: values.body,
-        attachment_url,
-        attachment_name,
-    }, { onConflict: 'user_id,type' });
-
-    if (error) throw new Error(error.message);
+const removeAttachment = async ({ attachmentId, filePath }: { attachmentId: string, filePath: string }) => {
+  await supabase.storage.from('message_attachments').remove([filePath]);
+  await supabase.from('template_attachments').delete().eq('id', attachmentId);
 };
-
-const removeAttachment = async (template: MessageTemplate | null) => {
-    if (!template?.attachment_url) return;
-    const oldFilePath = new URL(template.attachment_url).pathname.split('/message_attachments/')[1];
-    await supabase.storage.from('message_attachments').remove([oldFilePath]);
-    await supabase.from('message_templates').update({ attachment_url: null, attachment_name: null }).eq('id', template.id);
-}
 
 export const EmailTemplateForm = () => {
   const { session } = useSession();
@@ -96,44 +95,33 @@ export const EmailTemplateForm = () => {
   const form = useForm<EmailFormValues>({
     resolver: zodResolver(emailSchema),
     values: {
-        subject: template?.subject || "",
-        cc: template?.cc || "",
-        body: template?.body || "",
-        attachment: undefined,
+      subject: template?.subject || "",
+      cc: template?.cc || "",
+      body: template?.body || "",
+      attachments: undefined,
     }
   });
 
   const mutation = useMutation({
-    mutationFn: (values: EmailFormValues) => upsertEmailTemplate({ userId: session!.user!.id, values, currentTemplate: template }),
+    mutationFn: (values: EmailFormValues) => upsertEmailTemplate({ userId: session!.user!.id, values }),
     onSuccess: () => {
       showSuccess("تم حفظ قالب البريد الإلكتروني بنجاح!");
-      queryClient.invalidateQueries({ queryKey: ["emailTemplate"] });
-      form.reset({ ...form.getValues(), attachment: undefined });
+      queryClient.invalidateQueries({ queryKey: ["emailTemplate", session?.user?.id] });
+      form.reset({ ...form.getValues(), attachments: undefined });
     },
-    onError: (error) => {
-      showError(`حدث خطأ: ${error.message}`);
-    },
+    onError: (error) => showError(`حدث خطأ: ${error.message}`),
   });
 
   const removeAttachmentMutation = useMutation({
-    mutationFn: () => removeAttachment(template),
+    mutationFn: removeAttachment,
     onSuccess: () => {
-        showSuccess("تم حذف المرفق بنجاح.");
-        queryClient.invalidateQueries({ queryKey: ["emailTemplate"] });
+      showSuccess("تم حذف المرفق بنجاح.");
+      queryClient.invalidateQueries({ queryKey: ["emailTemplate", session?.user?.id] });
     },
-    onError: (error) => {
-        showError(`حدث خطأ أثناء حذف المرفق: ${error.message}`);
-    }
+    onError: (error) => showError(`حدث خطأ أثناء حذف المرفق: ${error.message}`),
   });
 
-  const onSubmit = (values: EmailFormValues) => {
-    if (!session?.user) return;
-    mutation.mutate(values);
-  };
-
-  if (isLoading) {
-    return <Skeleton className="h-96 w-full" />;
-  }
+  if (isLoading) return <Skeleton className="h-96 w-full" />;
 
   return (
     <Card>
@@ -145,70 +133,33 @@ export const EmailTemplateForm = () => {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="subject"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>الموضوع</FormLabel>
-                  <FormControl>
-                    <Input placeholder="مثال: عرض أسعار خدمات الوقود" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="cc"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>نسخة إلى (CC)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="cc@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="body"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>نص الرسالة</FormLabel>
-                  <FormControl>
-                    <Textarea rows={8} placeholder="اكتب نص رسالتك هنا..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormItem>
-                <FormLabel>المرفق</FormLabel>
-                {template?.attachment_name ? (
-                    <div className="flex items-center justify-between p-2 border rounded-md">
-                        <a href={template.attachment_url!} target="_blank" rel="noopener noreferrer" className="text-sm font-medium underline">
-                            {template.attachment_name}
-                        </a>
-                        <Button type="button" variant="ghost" size="icon" onClick={() => removeAttachmentMutation.mutate()} disabled={removeAttachmentMutation.isPending}>
-                            <X className="h-4 w-4" />
-                        </Button>
+          <form onSubmit={form.handleSubmit(mutation.mutate)} className="space-y-6">
+            <FormField control={form.control} name="subject" render={({ field }) => ( <FormItem> <FormLabel>الموضوع</FormLabel> <FormControl> <Input placeholder="مثال: عرض أسعار خدمات الوقود" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
+            <FormField control={form.control} name="cc" render={({ field }) => ( <FormItem> <FormLabel>نسخة إلى (CC)</FormLabel> <FormControl> <Input placeholder="cc@example.com" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
+            <FormField control={form.control} name="body" render={({ field }) => ( <FormItem> <FormLabel>نص الرسالة</FormLabel> <FormControl> <Textarea rows={8} placeholder="اكتب نص رسالتك هنا..." {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
+            
+            <div className="space-y-2">
+              <FormLabel>المرفقات الحالية</FormLabel>
+              {template?.attachments && template.attachments.length > 0 ? (
+                <div className="space-y-2">
+                  {template.attachments.map((att: TemplateAttachment) => (
+                    <div key={att.id} className="flex items-center justify-between p-2 border rounded-md text-sm">
+                      <a href={att.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:underline">
+                        <Paperclip className="h-4 w-4" /> {att.file_name}
+                      </a>
+                      <Button type="button" variant="ghost" size="icon" onClick={() => removeAttachmentMutation.mutate({ attachmentId: att.id, filePath: att.file_path })} disabled={removeAttachmentMutation.isPending}>
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
-                ) : (
-                    <FormField
-                        control={form.control}
-                        name="attachment"
-                        render={({ field }) => (
-                            <FormControl>
-                                <Input type="file" onChange={(e) => field.onChange(e.target.files)} />
-                            </FormControl>
-                        )}
-                    />
-                )}
-                <FormMessage />
-            </FormItem>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">لا توجد مرفقات حالية.</p>
+              )}
+            </div>
+
+            <FormField control={form.control} name="attachments" render={({ field }) => ( <FormItem> <FormLabel>إضافة مرفقات جديدة</FormLabel> <FormControl> <Input type="file" multiple onChange={(e) => field.onChange(e.target.files)} /> </FormControl> <FormMessage /> </FormItem> )}/>
+            
             <Button type="submit" disabled={mutation.isPending}>
               {mutation.isPending ? "جاري الحفظ..." : "حفظ القالب"}
             </Button>
