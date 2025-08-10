@@ -34,7 +34,7 @@ const Login = () => {
                 button_label: 'إنشاء حساب',
                 social_provider_text: 'إنشاء حساب باستخدام',
                 link_text: 'ليس لديك حساب؟ أنشئ حسابًا',
-                confirmation_text: 'تفقد بريدك الإلكتروني لتأكيد الحساب',
+                confirmation_text: 'تفقد بريدك الإلكتروني لتأكيد الحساب. بعد تسجيل الدخول، يرجى تحديث اسمك الكامل في صفحة الملف الشخصي.',
               },
               forgotten_password: {
                 email_label: 'البريد الإلكتروني',

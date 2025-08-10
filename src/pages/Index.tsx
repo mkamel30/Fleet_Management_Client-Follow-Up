@@ -3,10 +3,21 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { AddClientDialog } from '@/components/clients/AddClientDialog';
 import { ClientsTable } from '@/components/clients/ClientsTable';
-import { Settings as SettingsIcon } from 'lucide-react';
+import { Settings, User, LogOut } from 'lucide-react';
 import { UpcomingFollowUps } from '@/components/notifications/UpcomingFollowUps';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useSession } from '@/context/SessionContext';
 
 const Index = () => {
+  const { session } = useSession();
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     // The SessionProvider will handle the redirect automatically.
@@ -19,13 +30,36 @@ const Index = () => {
         <div className="flex items-center gap-2">
           <UpcomingFollowUps />
           <AddClientDialog />
-          <Button asChild variant="ghost" size="icon">
-            <Link to="/settings">
-              <SettingsIcon className="h-5 w-5" />
-              <span className="sr-only">الإعدادات</span>
-            </Link>
-          </Button>
-          <Button onClick={handleLogout} variant="outline">تسجيل الخروج</Button>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <User className="h-5 w-5" />
+                <span className="sr-only">قائمة المستخدم</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" dir="rtl">
+              <DropdownMenuLabel>حسابي</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/profile">
+                  <User className="ml-2 h-4 w-4" />
+                  <span>الملف الشخصي</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/settings">
+                  <Settings className="ml-2 h-4 w-4" />
+                  <span>الإعدادات</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="ml-2 h-4 w-4" />
+                <span>تسجيل الخروج</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
       <main>
