@@ -19,6 +19,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { showSuccess, showError } from "@/utils/toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { useEffect } from "react";
 import { X } from "lucide-react";
 
 const whatsappSchema = z.object({
@@ -31,7 +32,7 @@ type WhatsAppFormValues = z.infer<typeof whatsappSchema>;
 const fetchWhatsAppTemplate = async (userId: string): Promise<MessageTemplate | null> => {
   const { data, error } = await supabase
     .from("message_templates")
-    .select("*")
+    .select("*, attachments:template_attachments(*)")
     .eq("user_id", userId)
     .eq("type", "whatsapp")
     .single();
@@ -39,43 +40,54 @@ const fetchWhatsAppTemplate = async (userId: string): Promise<MessageTemplate | 
   if (error && error.code !== "PGRST116") {
     throw new Error(error.message);
   }
-  return data;
+  return data as MessageTemplate | null;
 };
 
 const upsertWhatsAppTemplate = async ({ userId, values, currentTemplate }: { userId: string; values: WhatsAppFormValues, currentTemplate: MessageTemplate | null }) => {
-    let attachment_url = currentTemplate?.attachment_url || null;
-    let attachment_name = currentTemplate?.attachment_name || null;
-    const file = values.attachment?.[0];
-
-    if (file) {
-        if (currentTemplate?.attachment_url) {
-            const oldFilePath = new URL(currentTemplate.attachment_url).pathname.split('/message_attachments/')[1];
-            await supabase.storage.from('message_attachments').remove([oldFilePath]);
-        }
-        const filePath = `${userId}/${Date.now()}_${file.name}`;
-        const { error: uploadError } = await supabase.storage.from('message_attachments').upload(filePath, file);
-        if (uploadError) throw new Error(`Upload error: ${uploadError.message}`);
-        const { data: urlData } = supabase.storage.from('message_attachments').getPublicUrl(filePath);
-        attachment_url = urlData.publicUrl;
-        attachment_name = file.name;
-    }
-
-    const { error } = await supabase.from("message_templates").upsert({
+    const { data: templateData, error: upsertError } = await supabase.from("message_templates").upsert({
         user_id: userId,
         type: "whatsapp",
         body: values.body,
-        attachment_url,
-        attachment_name,
-    }, { onConflict: 'user_id,type' });
+    }, { onConflict: 'user_id,type' }).select().single();
 
-    if (error) throw new Error(error.message);
+    if (upsertError) throw new Error(`Template upsert error: ${upsertError.message}`);
+    if (!templateData) throw new Error("Failed to upsert template data.");
+
+    const templateId = templateData.id;
+    const file = values.attachment?.[0];
+
+    if (file) {
+        if (currentTemplate?.attachments && currentTemplate.attachments.length > 0) {
+            const oldAttachment = currentTemplate.attachments[0];
+            await supabase.storage.from('message_attachments').remove([oldAttachment.file_path]);
+            await supabase.from('template_attachments').delete().eq('id', oldAttachment.id);
+        }
+
+        const filePath = `${userId}/${templateId}/${Date.now()}_${file.name}`;
+        const { error: uploadError } = await supabase.storage.from('message_attachments').upload(filePath, file);
+        if (uploadError) throw new Error(`Upload error: ${uploadError.message}`);
+        
+        const { data: urlData } = supabase.storage.from('message_attachments').getPublicUrl(filePath);
+        
+        const { error: attachmentError } = await supabase.from('template_attachments').insert({
+            template_id: templateId,
+            user_id: userId,
+            file_name: file.name,
+            file_url: urlData.publicUrl,
+            file_path: filePath,
+        });
+
+        if (attachmentError) throw new Error(`Attachment insert error: ${attachmentError.message}`);
+    }
 };
 
 const removeAttachment = async (template: MessageTemplate | null) => {
-    if (!template?.attachment_url) return;
-    const oldFilePath = new URL(template.attachment_url).pathname.split('/message_attachments/')[1];
-    await supabase.storage.from('message_attachments').remove([oldFilePath]);
-    await supabase.from('message_templates').update({ attachment_url: null, attachment_name: null }).eq('id', template.id);
+    if (!template?.attachments || template.attachments.length === 0) return;
+    
+    const attachment = template.attachments[0];
+    
+    await supabase.storage.from('message_attachments').remove([attachment.file_path]);
+    await supabase.from('template_attachments').delete().eq('id', attachment.id);
 }
 
 export const WhatsAppTemplateForm = () => {
@@ -90,17 +102,26 @@ export const WhatsAppTemplateForm = () => {
 
   const form = useForm<WhatsAppFormValues>({
     resolver: zodResolver(whatsappSchema),
-    values: {
-        body: template?.body || "",
+    defaultValues: {
+        body: "",
         attachment: undefined,
     }
   });
+
+  useEffect(() => {
+    if (template) {
+        form.reset({
+            body: template.body || "",
+        });
+    }
+  }, [template, form]);
 
   const mutation = useMutation({
     mutationFn: (values: WhatsAppFormValues) => upsertWhatsAppTemplate({ userId: session!.user!.id, values, currentTemplate: template }),
     onSuccess: () => {
       showSuccess("تم حفظ قالب واتساب بنجاح!");
       queryClient.invalidateQueries({ queryKey: ["whatsappTemplate"] });
+      queryClient.invalidateQueries({ queryKey: ["messageTemplates"] });
       form.reset({ ...form.getValues(), attachment: undefined });
     },
     onError: (error) => {
@@ -113,6 +134,7 @@ export const WhatsAppTemplateForm = () => {
     onSuccess: () => {
         showSuccess("تم حذف المرفق بنجاح.");
         queryClient.invalidateQueries({ queryKey: ["whatsappTemplate"] });
+        queryClient.invalidateQueries({ queryKey: ["messageTemplates"] });
     },
     onError: (error) => {
         showError(`حدث خطأ أثناء حذف المرفق: ${error.message}`);
@@ -154,10 +176,10 @@ export const WhatsAppTemplateForm = () => {
             />
             <FormItem>
                 <FormLabel>المرفق</FormLabel>
-                {template?.attachment_name ? (
+                {template?.attachments && template.attachments.length > 0 ? (
                     <div className="flex items-center justify-between p-2 border rounded-md">
-                        <a href={template.attachment_url!} target="_blank" rel="noopener noreferrer" className="text-sm font-medium underline">
-                            {template.attachment_name}
+                        <a href={template.attachments[0].file_url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium underline">
+                            {template.attachments[0].file_name}
                         </a>
                         <Button type="button" variant="ghost" size="icon" onClick={() => removeAttachmentMutation.mutate()} disabled={removeAttachmentMutation.isPending}>
                             <X className="h-4 w-4" />
