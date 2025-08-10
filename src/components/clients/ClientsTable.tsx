@@ -52,6 +52,24 @@ export const ClientsTable = () => {
     enabled: !!session?.user?.id,
   });
 
+  const formatWhatsAppNumber = (phone: string) => {
+    // Remove any non-digit characters from the phone number
+    let cleaned = phone.replace(/\D/g, '');
+
+    // If the number already includes the country code for Egypt, return it as is.
+    if (cleaned.startsWith('20')) {
+      return cleaned;
+    }
+
+    // If the number starts with a '0' (common for local formats), remove it.
+    if (cleaned.startsWith('0')) {
+      cleaned = cleaned.substring(1);
+    }
+    
+    // Prepend '20' for Egypt's country code, assuming user meant +20.
+    return `20${cleaned}`;
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-2">
@@ -121,7 +139,7 @@ export const ClientsTable = () => {
                     )}
                     {client.phone && (
                        <DropdownMenuItem asChild>
-                        <a href={`https://wa.me/${client.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
+                        <a href={`https://wa.me/${formatWhatsAppNumber(client.phone)}`} target="_blank" rel="noopener noreferrer">
                           <MessageSquare className="ml-2 h-4 w-4" />
                           <span>إرسال واتساب</span>
                         </a>
