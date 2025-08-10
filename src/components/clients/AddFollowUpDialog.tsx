@@ -75,7 +75,7 @@ const generateOutlookLink = (client: Client, values: FollowUpFormValues) => {
     url.searchParams.append('rru', 'addevent');
     url.searchParams.append('subject', subject);
     url.searchParams.append('startdt', startDate.toISOString());
-    url.search_params.append('enddt', endDate.toISOString());
+    url.searchParams.append('enddt', endDate.toISOString());
     url.searchParams.append('body', body);
 
     return url.toString();

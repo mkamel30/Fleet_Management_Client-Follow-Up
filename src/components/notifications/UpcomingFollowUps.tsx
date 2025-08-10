@@ -36,7 +36,7 @@ const fetchUpcomingFollowUps = async (userId: string): Promise<UpcomingFollowUp[
     throw new Error(error.message);
   }
   
-  return data.filter(f => f.client) as UpcomingFollowUp[];
+  return data.filter(f => f.client) as unknown as UpcomingFollowUp[];
 };
 
 export const UpcomingFollowUps = () => {
