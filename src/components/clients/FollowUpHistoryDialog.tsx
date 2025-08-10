@@ -23,7 +23,7 @@ interface FollowUpHistoryDialogProps {
 const fetchFollowUps = async (clientId: string): Promise<FollowUp[]> => {
     const { data, error } = await supabase
         .from('follow_ups')
-        .select('*, user:profiles(full_name)')
+        .select('*, user:profiles!inner(full_name)')
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
 
