@@ -117,6 +117,10 @@ export const WhatsAppTemplateForm = () => {
     onError: (error) => showError(`حدث خطأ أثناء حذف المرفق: ${error.message}`),
   });
 
+  const onSubmit = (values: WhatsAppFormValues) => {
+    mutation.mutate(values);
+  };
+
   if (isLoading) return <Skeleton className="h-64 w-full" />;
 
   return (
@@ -129,7 +133,7 @@ export const WhatsAppTemplateForm = () => {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(mutation.mutate)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField control={form.control} name="body" render={({ field }) => ( <FormItem> <FormLabel>نص الرسالة</FormLabel> <FormControl> <Textarea rows={8} placeholder="اكتب نص رسالتك هنا..." {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
             
             <div className="space-y-2">
