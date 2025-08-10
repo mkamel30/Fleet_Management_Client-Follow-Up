@@ -26,6 +26,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MoreHorizontal, Edit, Trash2, Mail, MessageSquare } from "lucide-react";
 import { EditClientDialog } from "./EditClientDialog";
 import { DeleteClientAlert } from "./DeleteClientAlert";
+import { showError, showSuccess } from "@/utils/toast";
 
 const fetchClients = async (userId: string): Promise<Client[]> => {
   const { data, error } = await supabase
@@ -86,31 +87,40 @@ export const ClientsTable = () => {
       .replace(/{contact_person}/g, client.contact_person || '');
   };
 
-  const createMailtoLink = (client: Client, template: MessageTemplate | undefined) => {
-    if (!client.email) return "#";
-    
-    const mailtoBase = `mailto:${client.email}`;
-    
-    if (!template || !template.body) {
-        return mailtoBase;
+  const handleEmailClick = async (client: Client) => {
+    if (!client.email) {
+      showError("This client does not have an email address.");
+      return;
     }
 
-    const subject = template.subject ? replacePlaceholders(template.subject, client) : '';
-    let body = template.body ? replacePlaceholders(template.body, client) : '';
+    const subject = emailTemplate?.subject ? replacePlaceholders(emailTemplate.subject, client) : '';
+    let body = emailTemplate?.body ? replacePlaceholders(emailTemplate.body, client) : '';
+    const cc = emailTemplate?.cc || '';
 
-    if (template.attachments && template.attachments.length > 0) {
-      body += `\n\n\nالمرفقات (للتحميل):`;
-      template.attachments.forEach(att => {
+    if (emailTemplate?.attachments && emailTemplate.attachments.length > 0) {
+      body += `\n\n\nAttachments (download links):`;
+      emailTemplate.attachments.forEach(att => {
         body += `\n- ${att.file_name}:\n${att.file_url}`;
       });
     }
 
+    if (body) {
+      try {
+        await navigator.clipboard.writeText(body);
+        showSuccess("Email body copied to clipboard. Please paste it into your email.");
+      } catch (err) {
+        console.error("Failed to copy email body:", err);
+        showError("Could not copy email body to clipboard.");
+      }
+    }
+
     const params = new URLSearchParams();
     if (subject) params.append('subject', subject);
-    if (template.cc) params.append('cc', template.cc);
-    if (body) params.append('body', body);
-
-    return `${mailtoBase}?${params.toString()}`;
+    if (cc) params.append('cc', cc);
+    
+    const mailtoLink = `mailto:${client.email}?${params.toString()}`;
+    
+    window.open(mailtoLink, '_self');
   };
 
   const createWhatsAppLink = (client: Client, template: MessageTemplate | undefined) => {
@@ -193,11 +203,9 @@ export const ClientsTable = () => {
                       </DropdownMenuItem>
                     </EditClientDialog>
                     {client.email && (
-                      <DropdownMenuItem asChild>
-                        <a href={createMailtoLink(client, emailTemplate)}>
-                          <Mail className="ml-2 h-4 w-4" />
-                          <span>إرسال بريد إلكتروني</span>
-                        </a>
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} onClick={() => handleEmailClick(client)}>
+                        <Mail className="ml-2 h-4 w-4" />
+                        <span>إرسال بريد إلكتروني</span>
                       </DropdownMenuItem>
                     )}
                     {client.phone && (
