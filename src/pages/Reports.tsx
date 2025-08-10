@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/SessionContext";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, FileDown, Users, Target, CheckCircle, Activity } from "lucide-react";
@@ -202,6 +202,11 @@ const ReportsPage = () => {
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
+              <CardFooter className="flex justify-center">
+                <p className="text-sm font-bold text-muted-foreground">
+                  إجمالي عدد العملاء: {data.totalClients}
+                </p>
+              </CardFooter>
             </Card>
           </section>
 
