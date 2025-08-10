@@ -34,9 +34,11 @@ import { useSession } from "@/context/SessionContext";
 import { Client } from "@/types/client";
 import { MessageTemplate } from "@/types/template";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MoreHorizontal, Edit, Trash2, Mail, MessageSquare } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, Mail, MessageSquare, PlusCircle, History } from "lucide-react";
 import { EditClientDialog } from "./EditClientDialog";
 import { DeleteClientAlert } from "./DeleteClientAlert";
+import { AddFollowUpDialog } from "./AddFollowUpDialog";
+import { FollowUpHistoryDialog } from "./FollowUpHistoryDialog";
 import { showError, showSuccess } from "@/utils/toast";
 
 const fetchClients = async (userId: string): Promise<Client[]> => {
@@ -207,6 +209,18 @@ export const ClientsTable = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" dir="rtl">
                     <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
+                    <AddFollowUpDialog client={client}>
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                            <PlusCircle className="ml-2 h-4 w-4" />
+                            <span>إضافة متابعة</span>
+                        </DropdownMenuItem>
+                    </AddFollowUpDialog>
+                    <FollowUpHistoryDialog client={client}>
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                            <History className="ml-2 h-4 w-4" />
+                            <span>عرض السجل</span>
+                        </DropdownMenuItem>
+                    </FollowUpHistoryDialog>
                     <DropdownMenuSeparator />
                     <EditClientDialog client={client}>
                       <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
