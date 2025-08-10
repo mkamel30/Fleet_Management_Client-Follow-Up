@@ -17,34 +17,43 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
 
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setLoading(false);
-    };
-
-    getSession();
-
+    // Set up the auth state listener.
+    // This will be called immediately with the current session,
+    // and then every time the auth state changes.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (!session && location.pathname !== '/login') {
-        navigate('/login');
-      } else if (session && location.pathname === '/login') {
-        navigate('/');
-      }
+      setLoading(false);
     });
 
+    // Clean up the subscription when the component unmounts.
     return () => subscription.unsubscribe();
-  }, [navigate, location.pathname]);
+  }, []); // Run this effect only once.
+
+  useEffect(() => {
+    // Handle redirects based on session state and current location.
+    // This effect runs whenever the session, loading state, or location changes.
+    if (!loading) {
+      const isAuthPage = location.pathname === '/login';
+      if (session && isAuthPage) {
+        // User is logged in but on the login page, redirect to home.
+        navigate('/');
+      } else if (!session && !isAuthPage) {
+        // User is not logged in and not on the login page, redirect to login.
+        navigate('/login');
+      }
+    }
+  }, [session, loading, navigate, location.pathname]);
 
   const value = {
     session,
     loading,
   };
 
+  // Don't render children until the initial session check is complete.
+  // This prevents the flicker effect.
   return (
     <SessionContext.Provider value={value}>
-      {!loading && children}
+      {loading ? null : children}
     </SessionContext.Provider>
   );
 };
