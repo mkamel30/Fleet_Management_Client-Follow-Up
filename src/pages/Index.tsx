@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { AddClientDialog } from '@/components/clients/AddClientDialog';
 import { ClientsTable } from '@/components/clients/ClientsTable';
-import { Settings, User, LogOut } from 'lucide-react';
+import { Settings, User, LogOut, FileText } from 'lucide-react';
 import { UpcomingFollowUps } from '@/components/notifications/UpcomingFollowUps';
 import {
   DropdownMenu,
@@ -29,6 +29,12 @@ const Index = () => {
         <h1 className="text-2xl font-bold">لوحة تحكم العملاء</h1>
         <div className="flex items-center gap-2">
           <UpcomingFollowUps />
+          <Button asChild variant="outline">
+            <Link to="/reports">
+              <FileText className="ml-2 h-4 w-4" />
+              التقارير
+            </Link>
+          </Button>
           <AddClientDialog />
           
           <DropdownMenu>

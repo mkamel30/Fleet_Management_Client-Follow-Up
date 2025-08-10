@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Settings from "./pages/Settings";
 import ProfilePage from "./pages/Profile";
+import ReportsPage from "./pages/Reports";
 import { SessionProvider } from "./context/SessionContext";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/reports" element={<ReportsPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
