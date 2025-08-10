@@ -26,6 +26,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MoreHorizontal, Edit, Trash2, Mail, MessageSquare } from "lucide-react";
 import { EditClientDialog } from "./EditClientDialog";
 import { DeleteClientAlert } from "./DeleteClientAlert";
+import { toast } from "sonner";
+import { showError } from "@/utils/toast";
 
 const fetchClients = async (userId: string): Promise<Client[]> => {
   const { data, error } = await supabase
@@ -90,27 +92,50 @@ export const ClientsTable = () => {
     if (!client.email) return "#";
     if (!template) return `mailto:${client.email}`;
 
-    const params = new URLSearchParams();
     const subject = template.subject ? replacePlaceholders(template.subject, client) : '';
-    if (subject) params.append('subject', subject);
-    if (template.cc) params.append('cc', template.cc);
-
+    const cc = template.cc || '';
     const greeting = `السادة/ ${client.company_name}`;
     const templateBody = template.body ? replacePlaceholders(template.body, client) : '';
     let body = `${greeting}\n\n${templateBody}`;
 
     if (template.attachments && template.attachments.length > 0) {
-      body += `\n\n\nالمرفقات:`;
+      body += `\n\n\nالمرفقات (للتحميل):`;
       template.attachments.forEach(att => {
         body += `\n- ${att.file_name}:\n${att.file_url}`;
       });
     }
 
-    // Add RTL mark to ensure correct direction in email clients
     body = `\u200F${body}`;
-    params.append('body', body);
+    
+    const mailtoParts = [
+        `mailto:${client.email}`,
+        `?subject=${encodeURIComponent(subject)}`,
+        cc ? `&cc=${encodeURIComponent(cc)}` : '',
+        `&body=${encodeURIComponent(body)}`
+    ];
+    
+    return mailtoParts.join('');
+  };
 
-    return `mailto:${client.email}?${params.toString()}`;
+  const handleSendEmail = (client: Client) => {
+    const mailtoLink = createMailtoLink(client, emailTemplate);
+
+    if (mailtoLink.length > 2000) {
+      showError("محتوى البريد الإلكتروني طويل جدًا وقد لا يتم فتحه بشكل صحيح.");
+      return;
+    }
+
+    if (emailTemplate?.attachments && emailTemplate.attachments.length > 0) {
+      toast("سيتم فتح برنامج البريد الإلكتروني الخاص بك.", {
+        description: "تمت إضافة رابط لتحميل المرفق في نص الرسالة.",
+        action: {
+          label: "حسناً",
+          onClick: () => {},
+        },
+      });
+    }
+
+    window.location.href = mailtoLink;
   };
 
   const createWhatsAppLink = (client: Client, template: MessageTemplate | undefined) => {
@@ -193,11 +218,9 @@ export const ClientsTable = () => {
                       </DropdownMenuItem>
                     </EditClientDialog>
                     {client.email && (
-                      <DropdownMenuItem asChild>
-                        <a href={createMailtoLink(client, emailTemplate)}>
-                          <Mail className="ml-2 h-4 w-4" />
-                          <span>إرسال بريد إلكتروني</span>
-                        </a>
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} onClick={() => handleSendEmail(client)}>
+                        <Mail className="ml-2 h-4 w-4" />
+                        <span>إرسال بريد إلكتروني</span>
                       </DropdownMenuItem>
                     )}
                     {client.phone && (
