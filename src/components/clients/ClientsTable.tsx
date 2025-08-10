@@ -124,22 +124,40 @@ export const ClientsTable = () => {
             },
         });
 
-        dismissToast(loadingToast);
-
         if (error) {
-            throw new Error(error.message);
+            dismissToast(loadingToast);
+            console.error("Edge function error:", error);
+            
+            let errorMessage = error.message;
+            // Check if we can get a more specific message from the function's response
+            if ('context' in error && error.context && typeof error.context.json === 'function') {
+                try {
+                    const errorData = await error.context.json();
+                    if (errorData.error) {
+                        errorMessage = errorData.error;
+                    }
+                } catch (e) {
+                    console.error("Could not parse JSON from error response:", e);
+                }
+            }
+            
+            showError(`فشل إرسال البريد الإلكتروني: ${errorMessage}`);
+            return;
         }
         
         if (data.error) {
-            throw new Error(data.error);
+            dismissToast(loadingToast);
+            showError(`فشل إرسال البريد الإلكتروني: ${data.error}`);
+            return;
         }
 
+        dismissToast(loadingToast);
         showSuccess("تم إرسال البريد الإلكتروني بنجاح!");
 
-    } catch (error: any) {
+    } catch (unexpectedError: any) {
         dismissToast(loadingToast);
-        console.error("Failed to send email:", error);
-        showError(`فشل إرسال البريد الإلكتروني: ${error.message}`);
+        console.error("An unexpected error occurred in handleSendEmail:", unexpectedError);
+        showError(`حدث خطأ غير متوقع: ${unexpectedError.message}`);
     }
   };
 
