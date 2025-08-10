@@ -34,22 +34,18 @@ const fetchClients = async (userId: string): Promise<Client[]> => {
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
-  if (error) {
-    throw new Error(error.message);
-  }
+  if (error) throw new Error(error.message);
   return data;
 };
 
 const fetchTemplates = async (userId: string): Promise<MessageTemplate[]> => {
   const { data, error } = await supabase
     .from("message_templates")
-    .select("*")
+    .select("*, attachments:template_attachments(*)")
     .eq("user_id", userId);
 
-  if (error) {
-    throw new Error(`Failed to fetch templates: ${error.message}`);
-  }
-  return data || [];
+  if (error) throw new Error(`Failed to fetch templates: ${error.message}`);
+  return (data as MessageTemplate[]) || [];
 };
 
 export const ClientsTable = () => {
@@ -79,37 +75,55 @@ export const ClientsTable = () => {
 
   const formatWhatsAppNumber = (phone: string) => {
     let cleaned = phone.replace(/\D/g, '');
-    if (cleaned.startsWith('20')) {
-      return cleaned;
-    }
-    if (cleaned.startsWith('0')) {
-      cleaned = cleaned.substring(1);
-    }
+    if (cleaned.startsWith('20')) return cleaned;
+    if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
     return `20${cleaned}`;
   };
 
-  const createMailtoLink = (clientEmail: string, template: MessageTemplate | undefined) => {
-    if (!template) return `mailto:${clientEmail}`;
-    const params = new URLSearchParams();
-    if (template.subject) params.append('subject', template.subject);
-    if (template.cc) params.append('cc', template.cc);
-    
-    let body = template.body || '';
-    if (template.attachment_url) {
-      body += `\n\nالمرفق: ${template.attachment_url}`;
-    }
-    params.append('body', body);
-
-    return `mailto:${clientEmail}?${params.toString()}`;
+  const replacePlaceholders = (text: string, client: Client) => {
+    return text
+      .replace(/{company_name}/g, client.company_name || '')
+      .replace(/{contact_person}/g, client.contact_person || '');
   };
 
-  const createWhatsAppLink = (clientPhone: string, template: MessageTemplate | undefined) => {
-    const formattedPhone = formatWhatsAppNumber(clientPhone);
+  const createMailtoLink = (client: Client, template: MessageTemplate | undefined) => {
+    if (!client.email) return "#";
+    if (!template) return `mailto:${client.email}`;
+
+    const params = new URLSearchParams();
+    const subject = template.subject ? replacePlaceholders(template.subject, client) : '';
+    if (subject) params.append('subject', subject);
+    if (template.cc) params.append('cc', template.cc);
+
+    const greeting = `السادة/ ${client.company_name}`;
+    const templateBody = template.body ? replacePlaceholders(template.body, client) : '';
+    let body = `${greeting}\n\n${templateBody}`;
+
+    if (template.attachments && template.attachments.length > 0) {
+      body += `\n\n\nالمرفقات:`;
+      template.attachments.forEach(att => {
+        body += `\n- ${att.file_name}:\n${att.file_url}`;
+      });
+    }
+
+    body = `\u200F${body}`;
+    params.append('body', body);
+
+    return `mailto:${client.email}?${params.toString()}`;
+  };
+
+  const createWhatsAppLink = (client: Client, template: MessageTemplate | undefined) => {
+    if (!client.phone) return "#";
+    const formattedPhone = formatWhatsAppNumber(client.phone);
     if (!template) return `https://wa.me/${formattedPhone}`;
 
-    let text = template.body || '';
-    if (template.attachment_url) {
-      text += `\n\nيمكنك تحميل المرفق من الرابط التالي:\n${template.attachment_url}`;
+    let text = template.body ? replacePlaceholders(template.body, client) : '';
+
+    if (template.attachments && template.attachments.length > 0) {
+      text += `\n\nيمكنك تحميل المرفقات من الروابط التالية:`;
+      template.attachments.forEach(att => {
+        text += `\n- ${att.file_name}:\n${att.file_url}`;
+      });
     }
     
     const params = new URLSearchParams();
@@ -179,7 +193,7 @@ export const ClientsTable = () => {
                     </EditClientDialog>
                     {client.email && (
                       <DropdownMenuItem asChild>
-                        <a href={createMailtoLink(client.email!, emailTemplate)}>
+                        <a href={createMailtoLink(client, emailTemplate)}>
                           <Mail className="ml-2 h-4 w-4" />
                           <span>إرسال بريد إلكتروني</span>
                         </a>
@@ -187,7 +201,7 @@ export const ClientsTable = () => {
                     )}
                     {client.phone && (
                        <DropdownMenuItem asChild>
-                        <a href={createWhatsAppLink(client.phone, whatsappTemplate)} target="_blank" rel="noopener noreferrer">
+                        <a href={createWhatsAppLink(client, whatsappTemplate)} target="_blank" rel="noopener noreferrer">
                           <MessageSquare className="ml-2 h-4 w-4" />
                           <span>إرسال واتساب</span>
                         </a>
