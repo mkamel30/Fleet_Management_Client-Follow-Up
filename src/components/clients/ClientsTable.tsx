@@ -117,12 +117,12 @@ export const ClientsTable = () => {
     return mailtoParts.join('');
   };
 
-  const handleSendEmail = (client: Client) => {
+  const handleSendEmailClick = (e: React.MouseEvent<HTMLAnchorElement>, client: Client) => {
     const mailtoLink = createMailtoLink(client, emailTemplate);
-
     if (mailtoLink.length > 2000) {
-      showError("محتوى البريد الإلكتروني طويل جدًا وقد لا يتم فتحه بشكل صحيح.");
-      return;
+        e.preventDefault();
+        showError("محتوى البريد الإلكتروني طويل جدًا وقد لا يتم فتحه بشكل صحيح.");
+        return;
     }
 
     if (emailTemplate?.attachments && emailTemplate.attachments.length > 0) {
@@ -134,8 +134,6 @@ export const ClientsTable = () => {
         },
       });
     }
-
-    window.location.href = mailtoLink;
   };
 
   const createWhatsAppLink = (client: Client, template: MessageTemplate | undefined) => {
@@ -218,9 +216,11 @@ export const ClientsTable = () => {
                       </DropdownMenuItem>
                     </EditClientDialog>
                     {client.email && (
-                      <DropdownMenuItem onClick={() => handleSendEmail(client)}>
-                        <Mail className="ml-2 h-4 w-4" />
-                        <span>إرسال بريد إلكتروني</span>
+                      <DropdownMenuItem asChild>
+                        <a href={createMailtoLink(client, emailTemplate)} onClick={(e) => handleSendEmailClick(e, client)}>
+                          <Mail className="ml-2 h-4 w-4" />
+                          <span>إرسال بريد إلكتروني</span>
+                        </a>
                       </DropdownMenuItem>
                     )}
                     {client.phone && (
