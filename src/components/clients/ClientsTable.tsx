@@ -21,12 +21,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/SessionContext";
 import { Client } from "@/types/client";
+import { MessageTemplate } from "@/types/template";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MoreHorizontal, Edit, Trash2, Mail, MessageSquare } from "lucide-react";
 import { EditClientDialog } from "./EditClientDialog";
 import { DeleteClientAlert } from "./DeleteClientAlert";
-import { MessageTemplate } from "@/types/template";
-import { showError } from "@/utils/toast";
 
 const fetchClients = async (userId: string): Promise<Client[]> => {
   const { data, error } = await supabase
@@ -35,102 +34,91 @@ const fetchClients = async (userId: string): Promise<Client[]> => {
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    throw new Error(error.message);
+  }
   return data;
 };
 
-const fetchTemplate = async (userId: string, type: 'email' | 'whatsapp'): Promise<MessageTemplate | null> => {
+const fetchTemplates = async (userId: string): Promise<MessageTemplate[]> => {
   const { data, error } = await supabase
     .from("message_templates")
-    .select("*, attachments:template_attachments(*)")
-    .eq("user_id", userId)
-    .eq("type", type)
-    .single();
+    .select("*")
+    .eq("user_id", userId);
 
-  if (error && error.code !== "PGRST116") throw new Error(error.message);
-  return data as MessageTemplate | null;
+  if (error) {
+    throw new Error(`Failed to fetch templates: ${error.message}`);
+  }
+  return data || [];
 };
 
 export const ClientsTable = () => {
   const { session } = useSession();
   const {
     data: clients,
-    isLoading,
-    isError,
-    error,
+    isLoading: isLoadingClients,
+    isError: isErrorClients,
+    error: errorClients,
   } = useQuery({
     queryKey: ["clients", session?.user?.id],
     queryFn: () => fetchClients(session!.user!.id),
     enabled: !!session?.user?.id,
   });
 
-  const { data: emailTemplate } = useQuery({
-    queryKey: ["emailTemplate", session?.user?.id],
-    queryFn: () => fetchTemplate(session!.user!.id, 'email'),
+  const {
+    data: templates,
+    isLoading: isLoadingTemplates,
+  } = useQuery({
+    queryKey: ["messageTemplates", session?.user?.id],
+    queryFn: () => fetchTemplates(session!.user!.id),
     enabled: !!session?.user?.id,
   });
 
-  const { data: whatsappTemplate } = useQuery({
-    queryKey: ["whatsappTemplate", session?.user?.id],
-    queryFn: () => fetchTemplate(session!.user!.id, 'whatsapp'),
-    enabled: !!session?.user?.id,
-  });
+  const emailTemplate = templates?.find(t => t.type === 'email');
+  const whatsappTemplate = templates?.find(t => t.type === 'whatsapp');
 
   const formatWhatsAppNumber = (phone: string) => {
     let cleaned = phone.replace(/\D/g, '');
-    if (cleaned.startsWith('20')) return cleaned;
-    if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
+    if (cleaned.startsWith('20')) {
+      return cleaned;
+    }
+    if (cleaned.startsWith('0')) {
+      cleaned = cleaned.substring(1);
+    }
     return `20${cleaned}`;
   };
 
-  const replacePlaceholders = (text: string | null, client: Client): string => {
-    if (!text) return "";
-    return text
-      .replace(/{company_name}/g, client.company_name || '')
-      .replace(/{contact_person}/g, client.contact_person || '')
-      .replace(/{phone}/g, client.phone || '')
-      .replace(/{email}/g, client.email || '')
-      .replace(/{number_of_cars}/g, client.number_of_cars?.toString() || '')
-      .replace(/{fuel_type}/g, client.fuel_type || '');
+  const createMailtoLink = (clientEmail: string, template: MessageTemplate | undefined) => {
+    if (!template) return `mailto:${clientEmail}`;
+    const params = new URLSearchParams();
+    if (template.subject) params.append('subject', template.subject);
+    if (template.cc) params.append('cc', template.cc);
+    
+    let body = template.body || '';
+    if (template.attachment_url) {
+      body += `\n\nالمرفق: ${template.attachment_url}`;
+    }
+    params.append('body', body);
+
+    return `mailto:${clientEmail}?${params.toString()}`;
   };
 
-  const handleSendEmail = (client: Client) => {
-    if (!client.email) return;
-    if (!emailTemplate || !emailTemplate.body) {
-      showError("الرجاء إعداد قالب البريد الإلكتروني أولاً في صفحة الإعدادات.");
-      return;
-    }
+  const createWhatsAppLink = (clientPhone: string, template: MessageTemplate | undefined) => {
+    const formattedPhone = formatWhatsAppNumber(clientPhone);
+    if (!template) return `https://wa.me/${formattedPhone}`;
 
-    let body = replacePlaceholders(emailTemplate.body, client);
-    if (emailTemplate.attachments && emailTemplate.attachments.length > 0) {
-      const attachmentLinks = emailTemplate.attachments.map(att => att.file_url).join('\n');
-      body += `\n\nالمرفقات:\n${attachmentLinks}`;
+    let text = template.body || '';
+    if (template.attachment_url) {
+      text += `\n\nيمكنك تحميل المرفق من الرابط التالي:\n${template.attachment_url}`;
     }
+    
+    const params = new URLSearchParams();
+    params.append('text', text);
 
-    const subject = replacePlaceholders(emailTemplate.subject, client);
-    const cc = emailTemplate.cc || '';
-    const mailtoLink = `mailto:${client.email}?subject=${encodeURIComponent(subject)}&cc=${encodeURIComponent(cc)}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailtoLink;
+    return `https://wa.me/${formattedPhone}?${params.toString()}`;
   };
 
-  const handleSendWhatsApp = (client: Client) => {
-    if (!client.phone) return;
-    if (!whatsappTemplate || !whatsappTemplate.body) {
-      showError("الرجاء إعداد قالب واتساب أولاً في صفحة الإعدادات.");
-      return;
-    }
-
-    let body = replacePlaceholders(whatsappTemplate.body, client);
-    if (whatsappTemplate.attachments && whatsappTemplate.attachments.length > 0) {
-      const attachmentLinks = whatsappTemplate.attachments.map(att => att.file_url).join('\n');
-      body += `\n\nالمرفقات:\n${attachmentLinks}`;
-    }
-
-    const whatsappLink = `https://wa.me/${formatWhatsAppNumber(client.phone)}?text=${encodeURIComponent(body)}`;
-    window.open(whatsappLink, '_blank', 'noopener,noreferrer');
-  };
-
-  if (isLoading) {
+  if (isLoadingClients || isLoadingTemplates) {
     return (
       <div className="space-y-2">
         <Skeleton className="h-12 w-full" />
@@ -140,8 +128,8 @@ export const ClientsTable = () => {
     );
   }
 
-  if (isError) {
-    return <div className="text-red-500">حدث خطأ في جلب البيانات: {error.message}</div>;
+  if (isErrorClients) {
+    return <div className="text-red-500">حدث خطأ في جلب البيانات: {errorClients.message}</div>;
   }
 
   return (
@@ -180,7 +168,7 @@ export const ClientsTable = () => {
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" dir="rtl">
                     <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <EditClientDialog client={client}>
@@ -190,15 +178,19 @@ export const ClientsTable = () => {
                       </DropdownMenuItem>
                     </EditClientDialog>
                     {client.email && (
-                      <DropdownMenuItem onClick={() => handleSendEmail(client)}>
-                        <Mail className="ml-2 h-4 w-4" />
-                        <span>إرسال بريد إلكتروني</span>
+                      <DropdownMenuItem asChild>
+                        <a href={createMailtoLink(client.email!, emailTemplate)}>
+                          <Mail className="ml-2 h-4 w-4" />
+                          <span>إرسال بريد إلكتروني</span>
+                        </a>
                       </DropdownMenuItem>
                     )}
                     {client.phone && (
-                       <DropdownMenuItem onClick={() => handleSendWhatsApp(client)}>
+                       <DropdownMenuItem asChild>
+                        <a href={createWhatsAppLink(client.phone, whatsappTemplate)} target="_blank" rel="noopener noreferrer">
                           <MessageSquare className="ml-2 h-4 w-4" />
                           <span>إرسال واتساب</span>
+                        </a>
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />
