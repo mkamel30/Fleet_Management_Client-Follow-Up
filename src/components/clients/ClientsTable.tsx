@@ -15,6 +15,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
@@ -107,7 +118,7 @@ export const ClientsTable = () => {
     if (body) {
       try {
         await navigator.clipboard.writeText(body);
-        showSuccess("Email body copied to clipboard. Please paste it into your email.");
+        showSuccess("تم نسخ نص البريد الإلكتروني إلى الحافظة. يرجى لصقه في رسالتك.");
       } catch (err) {
         console.error("Failed to copy email body:", err);
         showError("Could not copy email body to clipboard.");
@@ -204,18 +215,54 @@ export const ClientsTable = () => {
                       </DropdownMenuItem>
                     </EditClientDialog>
                     {client.email && (
-                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} onClick={() => handleEmailClick(client)}>
-                        <Mail className="ml-2 h-4 w-4" />
-                        <span>إرسال بريد إلكتروني</span>
-                      </DropdownMenuItem>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                            <Mail className="ml-2 h-4 w-4" />
+                            <span>إرسال بريد إلكتروني</span>
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent dir="rtl">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>تأكيد إرسال البريد الإلكتروني</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              سيتم فتح برنامج البريد الإلكتروني الخاص بك. تم نسخ محتوى الرسالة إلى الحافظة، كل ما عليك هو لصقه في جسم الرسالة.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleEmailClick(client)}>
+                              متابعة
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     )}
                     {client.phone && (
-                       <DropdownMenuItem asChild>
-                        <a href={createWhatsAppLink(client, whatsappTemplate)} target="_blank" rel="noopener noreferrer">
-                          <MessageSquare className="ml-2 h-4 w-4" />
-                          <span>إرسال واتساب</span>
-                        </a>
-                      </DropdownMenuItem>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                            <MessageSquare className="ml-2 h-4 w-4" />
+                            <span>إرسال واتساب</span>
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent dir="rtl">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>تأكيد إرسال رسالة واتساب</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              هل أنت متأكد أنك تريد فتح واتساب لإرسال رسالة إلى هذا العميل؟
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                            <AlertDialogAction asChild>
+                              <a href={createWhatsAppLink(client, whatsappTemplate)} target="_blank" rel="noopener noreferrer">
+                                متابعة
+                              </a>
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     )}
                     <DropdownMenuSeparator />
                     <DeleteClientAlert clientId={client.id}>
