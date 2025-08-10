@@ -114,11 +114,12 @@ export const ClientsTable = () => {
       }
     }
 
-    const params = new URLSearchParams();
-    if (subject) params.append('subject', subject);
-    if (cc) params.append('cc', cc);
+    const queryParts = [];
+    if (subject) queryParts.push(`subject=${encodeURIComponent(subject)}`);
+    if (cc) queryParts.push(`cc=${encodeURIComponent(cc)}`);
     
-    const mailtoLink = `mailto:${client.email}?${params.toString()}`;
+    const queryString = queryParts.join('&');
+    const mailtoLink = `mailto:${client.email}?${queryString}`;
     
     window.open(mailtoLink, '_self');
   };
