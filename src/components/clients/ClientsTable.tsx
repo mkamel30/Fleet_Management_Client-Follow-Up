@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/SessionContext";
 import { Client } from "@/types/client";
@@ -64,6 +64,7 @@ const fetchTemplates = async (userId: string): Promise<MessageTemplate[]> => {
 
 export const ClientsTable = () => {
   const { session } = useSession();
+  const queryClient = useQueryClient();
   const {
     data: clients,
     isLoading: isLoadingClients,
@@ -86,6 +87,28 @@ export const ClientsTable = () => {
 
   const emailTemplate = templates?.find(t => t.type === 'email');
   const whatsappTemplate = templates?.find(t => t.type === 'whatsapp');
+
+  const logActionAsFollowUp = async (client: Client, type: 'email' | 'whatsapp') => {
+    if (!session?.user) return;
+
+    const feedbackMessage = type === 'email' 
+        ? 'تم إرسال بريد إلكتروني باستخدام القالب.' 
+        : 'تم إرسال رسالة واتساب باستخدام القالب.';
+
+    const { error } = await supabase.from('follow_ups').insert({
+        client_id: client.id,
+        user_id: session.user.id,
+        feedback: feedbackMessage,
+        status: client.status || 'متابعة مستمرة',
+    });
+
+    if (error) {
+        showError(`فشل تسجيل المتابعة: ${error.message}`);
+    } else {
+        showSuccess('تم تسجيل الإجراء في سجل المتابعة.');
+        queryClient.invalidateQueries({ queryKey: ['followUps', client.id] });
+    }
+  };
 
   const formatWhatsAppNumber = (phone: string) => {
     let cleaned = phone.replace(/\D/g, '');
@@ -134,6 +157,7 @@ export const ClientsTable = () => {
     const queryString = queryParts.join('&');
     const mailtoLink = `mailto:${client.email}?${queryString}`;
     
+    await logActionAsFollowUp(client, 'email');
     window.open(mailtoLink, '_self');
   };
 
@@ -155,6 +179,16 @@ export const ClientsTable = () => {
     params.append('text', text);
 
     return `https://wa.me/${formattedPhone}?${params.toString()}`;
+  };
+
+  const handleWhatsAppClick = async (client: Client) => {
+    if (!client.phone) {
+      showError("This client does not have a phone number.");
+      return;
+    }
+    const link = createWhatsAppLink(client, whatsappTemplate);
+    await logActionAsFollowUp(client, 'whatsapp');
+    window.open(link, '_blank', 'noopener,noreferrer');
   };
 
   if (isLoadingClients || isLoadingTemplates) {
@@ -269,10 +303,8 @@ export const ClientsTable = () => {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                            <AlertDialogAction asChild>
-                              <a href={createWhatsAppLink(client, whatsappTemplate)} target="_blank" rel="noopener noreferrer">
-                                متابعة
-                              </a>
+                            <AlertDialogAction onClick={() => handleWhatsAppClick(client)}>
+                              متابعة
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
