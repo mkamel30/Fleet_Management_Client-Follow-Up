@@ -21,6 +21,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/SessionContext";
 import { Client } from "@/types/client";
+import { MessageTemplate } from "@/types/template";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MoreHorizontal, Edit, Trash2, Mail, MessageSquare } from "lucide-react";
 import { EditClientDialog } from "./EditClientDialog";
@@ -39,38 +40,85 @@ const fetchClients = async (userId: string): Promise<Client[]> => {
   return data;
 };
 
+const fetchTemplates = async (userId: string): Promise<MessageTemplate[]> => {
+  const { data, error } = await supabase
+    .from("message_templates")
+    .select("*")
+    .eq("user_id", userId);
+
+  if (error) {
+    throw new Error(`Failed to fetch templates: ${error.message}`);
+  }
+  return data || [];
+};
+
 export const ClientsTable = () => {
   const { session } = useSession();
   const {
     data: clients,
-    isLoading,
-    isError,
-    error,
+    isLoading: isLoadingClients,
+    isError: isErrorClients,
+    error: errorClients,
   } = useQuery({
     queryKey: ["clients", session?.user?.id],
     queryFn: () => fetchClients(session!.user!.id),
     enabled: !!session?.user?.id,
   });
 
-  const formatWhatsAppNumber = (phone: string) => {
-    // Remove any non-digit characters from the phone number
-    let cleaned = phone.replace(/\D/g, '');
+  const {
+    data: templates,
+    isLoading: isLoadingTemplates,
+  } = useQuery({
+    queryKey: ["messageTemplates", session?.user?.id],
+    queryFn: () => fetchTemplates(session!.user!.id),
+    enabled: !!session?.user?.id,
+  });
 
-    // If the number already includes the country code for Egypt, return it as is.
+  const emailTemplate = templates?.find(t => t.type === 'email');
+  const whatsappTemplate = templates?.find(t => t.type === 'whatsapp');
+
+  const formatWhatsAppNumber = (phone: string) => {
+    let cleaned = phone.replace(/\D/g, '');
     if (cleaned.startsWith('20')) {
       return cleaned;
     }
-
-    // If the number starts with a '0' (common for local formats), remove it.
     if (cleaned.startsWith('0')) {
       cleaned = cleaned.substring(1);
     }
-    
-    // Prepend '20' for Egypt's country code, assuming user meant +20.
     return `20${cleaned}`;
   };
 
-  if (isLoading) {
+  const createMailtoLink = (clientEmail: string, template: MessageTemplate | undefined) => {
+    if (!template) return `mailto:${clientEmail}`;
+    const params = new URLSearchParams();
+    if (template.subject) params.append('subject', template.subject);
+    if (template.cc) params.append('cc', template.cc);
+    
+    let body = template.body || '';
+    if (template.attachment_url) {
+      body += `\n\nالمرفق: ${template.attachment_url}`;
+    }
+    params.append('body', body);
+
+    return `mailto:${clientEmail}?${params.toString()}`;
+  };
+
+  const createWhatsAppLink = (clientPhone: string, template: MessageTemplate | undefined) => {
+    const formattedPhone = formatWhatsAppNumber(clientPhone);
+    if (!template) return `https://wa.me/${formattedPhone}`;
+
+    let text = template.body || '';
+    if (template.attachment_url) {
+      text += `\n\nيمكنك تحميل المرفق من الرابط التالي:\n${template.attachment_url}`;
+    }
+    
+    const params = new URLSearchParams();
+    params.append('text', text);
+
+    return `https://wa.me/${formattedPhone}?${params.toString()}`;
+  };
+
+  if (isLoadingClients || isLoadingTemplates) {
     return (
       <div className="space-y-2">
         <Skeleton className="h-12 w-full" />
@@ -80,8 +128,8 @@ export const ClientsTable = () => {
     );
   }
 
-  if (isError) {
-    return <div className="text-red-500">حدث خطأ في جلب البيانات: {error.message}</div>;
+  if (isErrorClients) {
+    return <div className="text-red-500">حدث خطأ في جلب البيانات: {errorClients.message}</div>;
   }
 
   return (
@@ -131,7 +179,7 @@ export const ClientsTable = () => {
                     </EditClientDialog>
                     {client.email && (
                       <DropdownMenuItem asChild>
-                        <a href={`mailto:${client.email}`}>
+                        <a href={createMailtoLink(client.email!, emailTemplate)}>
                           <Mail className="ml-2 h-4 w-4" />
                           <span>إرسال بريد إلكتروني</span>
                         </a>
@@ -139,7 +187,7 @@ export const ClientsTable = () => {
                     )}
                     {client.phone && (
                        <DropdownMenuItem asChild>
-                        <a href={`https://wa.me/${formatWhatsAppNumber(client.phone)}`} target="_blank" rel="noopener noreferrer">
+                        <a href={createWhatsAppLink(client.phone, whatsappTemplate)} target="_blank" rel="noopener noreferrer">
                           <MessageSquare className="ml-2 h-4 w-4" />
                           <span>إرسال واتساب</span>
                         </a>
