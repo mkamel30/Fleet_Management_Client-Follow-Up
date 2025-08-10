@@ -4,7 +4,7 @@ import { useSession } from "@/context/SessionContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, FileDown, Users, Target, CheckCircle, Activity } from "lucide-react";
+import { ArrowRight, FileDown, Users, Target, CheckCircle, Activity, UserPlus, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { startOfMonth, endOfMonth } from 'date-fns';
@@ -43,6 +43,9 @@ const fetchAnalyticsData = async (userId: string) => {
     return acc;
   }, {} as Record<string, number>);
 
+  const newClients = clientsByStatus['جديد'] || 0;
+  const contactLaterClients = clientsByStatus['تواصل لاحقاً'] || 0;
+
   const chartData = Object.entries(clientsByStatus).map(([name, value]) => ({ name, 'عدد العملاء': value }));
 
   return {
@@ -51,6 +54,8 @@ const fetchAnalyticsData = async (userId: string) => {
     conversionRate,
     followUpsThisMonth: followUpsThisMonth || 0,
     chartData,
+    newClients,
+    contactLaterClients,
   };
 };
 
@@ -126,7 +131,9 @@ const ReportsPage = () => {
       
       {isLoading ? (
         <div className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
             <Skeleton className="h-32" />
             <Skeleton className="h-32" />
             <Skeleton className="h-32" />
@@ -144,7 +151,7 @@ const ReportsPage = () => {
       ) : data && (
         <main className="space-y-8">
           <section>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">إجمالي العملاء</CardTitle>
@@ -179,6 +186,24 @@ const ReportsPage = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">+{data.followUpsThisMonth}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">عملاء جدد</CardTitle>
+                  <UserPlus className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{data.newClients}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">تواصل لاحقاً</CardTitle>
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{data.contactLaterClients}</div>
                 </CardContent>
               </Card>
             </div>
