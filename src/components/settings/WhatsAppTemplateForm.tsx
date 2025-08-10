@@ -133,7 +133,7 @@ export const WhatsAppTemplateForm = () => {
       <CardHeader>
         <CardTitle>قالب واتساب</CardTitle>
         <CardDescription>
-          قم بإعداد المحتوى الافتراضي لرسائل واتساب والمرفقات. يمكنك استخدام متغيرات مثل {company_name} و {contact_person} ليتم استبدالها تلقائيًا.
+          {"قم بإعداد المحتوى الافتراضي لرسائل واتساب والمرفقات. يمكنك استخدام متغيرات مثل {company_name} و {contact_person} ليتم استبدالها تلقائيًا."}
         </CardDescription>
       </CardHeader>
       <CardContent>

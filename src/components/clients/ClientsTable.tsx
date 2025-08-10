@@ -187,7 +187,7 @@ export const ClientsTable = () => {
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" dir="rtl">
+                  <DropdownMenuContent align="end">
                     <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <EditClientDialog client={client}>

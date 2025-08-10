@@ -140,7 +140,7 @@ export const EmailTemplateForm = () => {
       <CardHeader>
         <CardTitle>قالب البريد الإلكتروني</CardTitle>
         <CardDescription>
-          قم بإعداد المحتوى الافتراضي لرسائل البريد الإلكتروني والمرفقات. يمكنك استخدام متغيرات مثل {company_name} و {contact_person} ليتم استبدالها تلقائيًا.
+          {"قم بإعداد المحتوى الافتراضي لرسائل البريد الإلكتروني والمرفقات. يمكنك استخدام متغيرات مثل {company_name} و {contact_person} ليتم استبدالها تلقائيًا."}
         </CardDescription>
       </CardHeader>
       <CardContent>
