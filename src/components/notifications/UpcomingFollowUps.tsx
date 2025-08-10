@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { Bell } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Bell, Trash2 } from "lucide-react";
 import { format, isToday, isTomorrow } from "date-fns";
 import { arSA } from "date-fns/locale";
 
@@ -9,13 +9,16 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { showError, showSuccess } from "@/utils/toast";
+import { Separator } from "@/components/ui/separator";
 
 interface UpcomingFollowUp {
   id: string;
+  client_id: string;
   next_follow_up_date: string;
   client: {
     company_name: string;
-  } | null;
+  }[] | null;
 }
 
 const fetchUpcomingFollowUps = async (userId: string): Promise<UpcomingFollowUp[]> => {
@@ -23,6 +26,7 @@ const fetchUpcomingFollowUps = async (userId: string): Promise<UpcomingFollowUp[
     .from('follow_ups')
     .select(`
       id,
+      client_id,
       next_follow_up_date,
       client:clients ( company_name )
     `)
@@ -36,17 +40,53 @@ const fetchUpcomingFollowUps = async (userId: string): Promise<UpcomingFollowUp[
     throw new Error(error.message);
   }
   
-  return data.filter(f => f.client) as unknown as UpcomingFollowUp[];
+  if (!data) return [];
+
+  // Ensure only the soonest follow-up per client is shown
+  const uniqueFollowUps = new Map<string, UpcomingFollowUp>();
+  for (const followUp of data as UpcomingFollowUp[]) {
+    if (followUp.client_id && !uniqueFollowUps.has(followUp.client_id)) {
+      uniqueFollowUps.set(followUp.client_id, followUp);
+    }
+  }
+
+  return Array.from(uniqueFollowUps.values()).filter(f => f.client && f.client.length > 0);
 };
 
 export const UpcomingFollowUps = () => {
   const { session } = useSession();
+  const queryClient = useQueryClient();
+
   const { data: followUps, isLoading } = useQuery({
     queryKey: ['upcomingFollowUps', session?.user?.id],
     queryFn: () => fetchUpcomingFollowUps(session!.user!.id),
     enabled: !!session?.user?.id,
     staleTime: 1000 * 60 * 5, // Refetch every 5 minutes
   });
+
+  const clearMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase
+        .from('follow_ups')
+        .update({ next_follow_up_date: null })
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['upcomingFollowUps'] });
+      showSuccess("تم مسح الإشعارات.");
+    },
+    onError: (error: Error) => {
+      showError(`فشل مسح الإشعارات: ${error.message}`);
+    }
+  });
+
+  const handleClearAll = () => {
+    if (followUps && followUps.length > 0) {
+      const ids = followUps.map(f => f.id);
+      clearMutation.mutate(ids);
+    }
+  };
 
   const getRelativeDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -68,16 +108,16 @@ export const UpcomingFollowUps = () => {
           <span className="sr-only">فتح الإشعارات</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80" dir="rtl">
+      <PopoverContent align="end" className="w-80 p-0" dir="rtl">
         <div className="p-4">
           <h4 className="font-medium leading-none">متابعات قادمة</h4>
           <p className="text-sm text-muted-foreground">
             لديك {followUps?.length || 0} متابعة قادمة.
           </p>
         </div>
-        <div className="grid gap-2 max-h-96 overflow-y-auto p-1">
+        <div className="grid gap-2 max-h-80 overflow-y-auto p-4 pt-0">
           {isLoading ? (
-            <div className="p-4 space-y-4">
+            <div className="space-y-4">
               <Skeleton className="h-12 w-full" />
               <Skeleton className="h-12 w-full" />
             </div>
@@ -90,7 +130,7 @@ export const UpcomingFollowUps = () => {
                 <span className="flex h-2 w-2 translate-y-1 rounded-full bg-sky-500" />
                 <div className="grid gap-1">
                   <p className="text-sm font-medium leading-none">
-                    {followUp.client?.company_name}
+                    {followUp.client?.[0]?.company_name}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {getRelativeDate(followUp.next_follow_up_date)}
@@ -99,11 +139,28 @@ export const UpcomingFollowUps = () => {
               </div>
             ))
           ) : (
-            <p className="p-4 text-center text-sm text-muted-foreground">
+            <p className="py-8 text-center text-sm text-muted-foreground">
               لا توجد متابعات قادمة.
             </p>
           )}
         </div>
+        {followUps && followUps.length > 0 && (
+            <>
+                <Separator />
+                <div className="p-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full text-red-500 hover:text-red-600"
+                        onClick={handleClearAll}
+                        disabled={clearMutation.isPending}
+                    >
+                        <Trash2 className="ml-2 h-4 w-4" />
+                        {clearMutation.isPending ? "جاري المسح..." : "مسح الكل"}
+                    </Button>
+                </div>
+            </>
+        )}
       </PopoverContent>
     </Popover>
   );
