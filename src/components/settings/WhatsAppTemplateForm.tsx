@@ -25,7 +25,7 @@ import { X } from "lucide-react";
 
 const whatsappSchema = z.object({
   body: z.string().min(1, "نص الرسالة مطلوب"),
-  attachment: z.instanceof(FileList).optional(),
+  attachments: z.instanceof(FileList).optional(),
 });
 
 type WhatsAppFormValues = z.infer<typeof whatsappSchema>;
@@ -44,7 +44,7 @@ const fetchWhatsAppTemplate = async (userId: string): Promise<MessageTemplate | 
   return data as MessageTemplate | null;
 };
 
-const upsertWhatsAppTemplate = async ({ userId, values, currentTemplate }: { userId: string; values: WhatsAppFormValues, currentTemplate: MessageTemplate | null }) => {
+const upsertWhatsAppTemplate = async ({ userId, values }: { userId: string; values: WhatsAppFormValues }) => {
     const { data: templateData, error: upsertError } = await supabase.from("message_templates").upsert({
         user_id: userId,
         type: "whatsapp",
@@ -55,40 +55,38 @@ const upsertWhatsAppTemplate = async ({ userId, values, currentTemplate }: { use
     if (!templateData) throw new Error("Failed to upsert template data.");
 
     const templateId = templateData.id;
-    const file = values.attachment?.[0];
+    const files = values.attachments;
 
-    if (file) {
-        if (currentTemplate?.attachments && currentTemplate.attachments.length > 0) {
-            const oldAttachment = currentTemplate.attachments[0];
-            await supabase.storage.from('message_attachments').remove([oldAttachment.file_path]);
-            await supabase.from('template_attachments').delete().eq('id', oldAttachment.id);
-        }
-
-        const filePath = `${userId}/${templateId}/${Date.now()}_${file.name}`;
-        const { error: uploadError } = await supabase.storage.from('message_attachments').upload(filePath, file);
-        if (uploadError) throw new Error(`Upload error: ${uploadError.message}`);
-        
-        const { data: urlData } = supabase.storage.from('message_attachments').getPublicUrl(filePath);
-        
-        const { error: attachmentError } = await supabase.from('template_attachments').insert({
-            template_id: templateId,
-            user_id: userId,
-            file_name: file.name,
-            file_url: urlData.publicUrl,
-            file_path: filePath,
+    if (files && files.length > 0) {
+        const uploadPromises = Array.from(files).map(async (file) => {
+            const filePath = `${userId}/${templateId}/${Date.now()}_${file.name}`;
+            const { error: uploadError } = await supabase.storage.from('message_attachments').upload(filePath, file);
+            if (uploadError) throw new Error(`Upload error for ${file.name}: ${uploadError.message}`);
+            
+            const { data: urlData } = supabase.storage.from('message_attachments').getPublicUrl(filePath);
+            
+            return {
+                template_id: templateId,
+                user_id: userId,
+                file_name: file.name,
+                file_url: urlData.publicUrl,
+                file_path: filePath,
+            };
         });
 
+        const newAttachments = await Promise.all(uploadPromises);
+
+        const { error: attachmentError } = await supabase.from('template_attachments').insert(newAttachments);
         if (attachmentError) throw new Error(`Attachment insert error: ${attachmentError.message}`);
     }
 };
 
-const removeAttachment = async (template: MessageTemplate | null) => {
-    if (!template?.attachments || template.attachments.length === 0) return;
-    
-    const attachment = template.attachments[0];
-    
-    await supabase.storage.from('message_attachments').remove([attachment.file_path]);
-    await supabase.from('template_attachments').delete().eq('id', attachment.id);
+const removeAttachment = async ({ attachmentId, filePath }: { attachmentId: string, filePath: string }) => {
+    const { error: storageError } = await supabase.storage.from('message_attachments').remove([filePath]);
+    if (storageError) throw new Error(`Storage deletion error: ${storageError.message}`);
+
+    const { error: dbError } = await supabase.from('template_attachments').delete().eq('id', attachmentId);
+    if (dbError) throw new Error(`Database deletion error: ${dbError.message}`);
 }
 
 export const WhatsAppTemplateForm = () => {
@@ -105,7 +103,7 @@ export const WhatsAppTemplateForm = () => {
     resolver: zodResolver(whatsappSchema),
     defaultValues: {
         body: "",
-        attachment: undefined,
+        attachments: undefined,
     }
   });
 
@@ -118,12 +116,12 @@ export const WhatsAppTemplateForm = () => {
   }, [template, form]);
 
   const mutation = useMutation({
-    mutationFn: (values: WhatsAppFormValues) => upsertWhatsAppTemplate({ userId: session!.user!.id, values, currentTemplate: template }),
+    mutationFn: (values: WhatsAppFormValues) => upsertWhatsAppTemplate({ userId: session!.user!.id, values }),
     onSuccess: () => {
       showSuccess("تم حفظ قالب واتساب بنجاح!");
-      queryClient.invalidateQueries({ queryKey: ["whatsappTemplate"] });
+      queryClient.invalidateQueries({ queryKey: ["whatsappTemplate", session?.user?.id] });
       queryClient.invalidateQueries({ queryKey: ["messageTemplates"] });
-      form.reset({ ...form.getValues(), attachment: undefined });
+      form.setValue('attachments', undefined);
     },
     onError: (error) => {
       showError(`حدث خطأ: ${error.message}`);
@@ -131,10 +129,10 @@ export const WhatsAppTemplateForm = () => {
   });
 
   const removeAttachmentMutation = useMutation({
-    mutationFn: () => removeAttachment(template),
+    mutationFn: removeAttachment,
     onSuccess: () => {
         showSuccess("تم حذف المرفق بنجاح.");
-        queryClient.invalidateQueries({ queryKey: ["whatsappTemplate"] });
+        queryClient.invalidateQueries({ queryKey: ["whatsappTemplate", session?.user?.id] });
         queryClient.invalidateQueries({ queryKey: ["messageTemplates"] });
     },
     onError: (error) => {
@@ -179,27 +177,31 @@ export const WhatsAppTemplateForm = () => {
               )}
             />
             <FormItem>
-                <FormLabel>المرفق</FormLabel>
-                {template?.attachments && template.attachments.length > 0 ? (
-                    <div className="flex items-center justify-between p-2 border rounded-md">
-                        <a href={template.attachments[0].file_url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium underline">
-                            {template.attachments[0].file_name}
-                        </a>
-                        <Button type="button" variant="ghost" size="icon" onClick={() => removeAttachmentMutation.mutate()} disabled={removeAttachmentMutation.isPending}>
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
-                ) : (
-                    <FormField
-                        control={form.control}
-                        name="attachment"
-                        render={({ field }) => (
-                            <FormControl>
-                                <Input type="file" onChange={(e) => field.onChange(e.target.files)} />
-                            </FormControl>
-                        )}
-                    />
-                )}
+                <FormLabel>المرفقات</FormLabel>
+                <div className="space-y-2">
+                    {template?.attachments && template.attachments.map(att => (
+                        <div key={att.id} className="flex items-center justify-between p-2 border rounded-md bg-muted/50">
+                            <a href={att.file_url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium underline truncate">
+                                {att.file_name}
+                            </a>
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removeAttachmentMutation.mutate({ attachmentId: att.id, filePath: att.file_path })} disabled={removeAttachmentMutation.isPending}>
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    ))}
+                </div>
+                <FormField
+                    control={form.control}
+                    name="attachments"
+                    render={({ field }) => (
+                        <FormControl className="mt-2">
+                            <Input type="file" multiple onChange={(e) => field.onChange(e.target.files)} />
+                        </FormControl>
+                    )}
+                />
+                <FormDescription>
+                    لإضافة مرفقات جديدة، اختر الملفات من هنا.
+                </FormDescription>
                 <FormMessage />
             </FormItem>
             <Button type="submit" disabled={mutation.isPending}>
