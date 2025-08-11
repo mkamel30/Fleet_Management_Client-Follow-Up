@@ -43,12 +43,20 @@ import { useSession } from "@/context/SessionContext";
 import { Client } from "@/types/client";
 import { MessageTemplate } from "@/types/template";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MoreHorizontal, Edit, Trash2, Mail, MessageSquare, PlusCircle, History } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, Mail, MessageSquare, PlusCircle, History, ArrowUp, ArrowDown } from "lucide-react";
 import { EditClientDialog } from "./EditClientDialog";
 import { DeleteClientAlert } from "./DeleteClientAlert";
 import { AddFollowUpDialog } from "./AddFollowUpDialog";
 import { FollowUpHistoryDialog } from "./FollowUpHistoryDialog";
 import { showError, showSuccess } from "@/utils/toast";
+
+type SortDirection = 'asc' | 'desc';
+type SortableClientKeys = keyof Client;
+
+interface SortConfig {
+  key: SortableClientKeys;
+  direction: SortDirection;
+}
 
 const fetchClients = async (userId: string): Promise<Client[]> => {
   const { data, error } = await supabase
@@ -92,6 +100,7 @@ export const ClientsTable = () => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
 
   const {
     data: clients,
@@ -113,9 +122,10 @@ export const ClientsTable = () => {
     enabled: !!session?.user?.id,
   });
 
-  const filteredClients = useMemo(() => {
+  const processedClients = useMemo(() => {
     if (!clients) return [];
-    return clients.filter(client => {
+    
+    let filtered = clients.filter(client => {
       const clientStatus = client.status || 'جديد';
       const matchesStatus = statusFilter === 'all' || clientStatus === statusFilter;
       
@@ -125,7 +135,42 @@ export const ClientsTable = () => {
         
       return matchesStatus && matchesSearch;
     });
-  }, [clients, searchTerm, statusFilter]);
+
+    if (sortConfig !== null) {
+      filtered.sort((a, b) => {
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
+
+        if (aValue === null) return 1;
+        if (bValue === null) return -1;
+
+        if (aValue < bValue) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+    return filtered;
+  }, [clients, searchTerm, statusFilter, sortConfig]);
+
+  const requestSort = (key: SortableClientKeys) => {
+    let direction: SortDirection = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (key: SortableClientKeys) => {
+    if (!sortConfig || sortConfig.key !== key) {
+      return null;
+    }
+    return sortConfig.direction === 'asc' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />;
+  };
 
   const emailTemplate = templates?.find(t => t.type === 'email');
   const whatsappTemplate = templates?.find(t => t.type === 'whatsapp');
@@ -274,19 +319,39 @@ export const ClientsTable = () => {
         <TableCaption>قائمة بجميع عملائك.</TableCaption>
         <TableHeader>
           <TableRow>
-            <TableHead className="text-right">اسم الشركة</TableHead>
-            <TableHead className="text-right">الشخص المسؤول</TableHead>
+            <TableHead className="text-right">
+              <Button variant="ghost" onClick={() => requestSort('company_name')}>
+                اسم الشركة {getSortIcon('company_name')}
+              </Button>
+            </TableHead>
+            <TableHead className="text-right">
+              <Button variant="ghost" onClick={() => requestSort('contact_person')}>
+                الشخص المسؤول {getSortIcon('contact_person')}
+              </Button>
+            </TableHead>
             <TableHead className="text-right">الهاتف</TableHead>
             <TableHead className="text-right">البريد الإلكتروني</TableHead>
-            <TableHead className="text-right">عدد السيارات</TableHead>
-            <TableHead className="text-right">نوع الوقود</TableHead>
-            <TableHead className="text-right">الحالة</TableHead>
+            <TableHead className="text-right">
+              <Button variant="ghost" onClick={() => requestSort('number_of_cars')}>
+                عدد السيارات {getSortIcon('number_of_cars')}
+              </Button>
+            </TableHead>
+            <TableHead className="text-right">
+              <Button variant="ghost" onClick={() => requestSort('fuel_type')}>
+                نوع الوقود {getSortIcon('fuel_type')}
+              </Button>
+            </TableHead>
+            <TableHead className="text-right">
+              <Button variant="ghost" onClick={() => requestSort('status')}>
+                الحالة {getSortIcon('status')}
+              </Button>
+            </TableHead>
             <TableHead className="text-right">الإجراءات</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredClients && filteredClients.length > 0 ? (
-            filteredClients.map((client) => (
+          {processedClients && processedClients.length > 0 ? (
+            processedClients.map((client) => (
               <TableRow key={client.id}>
                 <TableCell className="font-medium">{client.company_name}</TableCell>
                 <TableCell>{client.contact_person || "-"}</TableCell>
