@@ -43,11 +43,12 @@ import { useSession } from "@/context/SessionContext";
 import { Client } from "@/types/client";
 import { MessageTemplate } from "@/types/template";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MoreHorizontal, Edit, Trash2, Mail, MessageSquare, PlusCircle, History, ArrowUp, ArrowDown } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, Mail, MessageSquare, PlusCircle, History, ArrowUp, ArrowDown, StickyNote } from "lucide-react";
 import { EditClientDialog } from "./EditClientDialog";
 import { DeleteClientAlert } from "./DeleteClientAlert";
 import { AddFollowUpDialog } from "./AddFollowUpDialog";
 import { FollowUpHistoryDialog } from "./FollowUpHistoryDialog";
+import { ClientNotesDialog } from "./ClientNotesDialog";
 import { showError, showSuccess } from "@/utils/toast";
 
 type SortDirection = 'asc' | 'desc';
@@ -386,6 +387,12 @@ export const ClientsTable = () => {
                               <span>عرض السجل</span>
                           </DropdownMenuItem>
                       </FollowUpHistoryDialog>
+                      <ClientNotesDialog client={client}>
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                          <StickyNote className="ml-2 h-4 w-4" />
+                          <span>الملاحظات</span>
+                        </DropdownMenuItem>
+                      </ClientNotesDialog>
                       <DropdownMenuSeparator />
                       <EditClientDialog client={client}>
                         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
