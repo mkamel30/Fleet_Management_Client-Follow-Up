@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/SessionContext";
@@ -7,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, FileDown, Users, Target, CheckCircle, Activity, UserPlus, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, Cell } from 'recharts';
-import { startOfMonth, endOfMonth } from 'date-fns';
+import { startOfMonth, endOfMonth, subMonths, startOfToday, endOfToday } from 'date-fns';
 import { downloadCSV } from "@/lib/csv";
 import { showError, showLoading, dismissToast, showSuccess } from "@/utils/toast";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const STATUS_COLORS: { [key: string]: string } = {
   'تم التعاقد': 'hsl(var(--success))',
@@ -20,25 +22,39 @@ const STATUS_COLORS: { [key: string]: string } = {
   'جديد': 'hsl(var(--accent))',
 };
 
-const fetchAnalyticsData = async (userId: string) => {
-  const { data: clients, error: clientsError } = await supabase
-    .from('clients')
-    .select('id, status')
-    .eq('user_id', userId);
+type DateRangeFilter = 'this_month' | 'last_month' | 'last_90_days' | 'all_time';
 
+const getDateRange = (filter: DateRangeFilter): { startDate?: string, endDate?: string } => {
+  const now = new Date();
+  switch (filter) {
+    case 'this_month':
+      return { startDate: startOfMonth(now).toISOString(), endDate: endOfToday().toISOString() };
+    case 'last_month':
+      const lastMonth = subMonths(now, 1);
+      return { startDate: startOfMonth(lastMonth).toISOString(), endDate: endOfMonth(lastMonth).toISOString() };
+    case 'last_90_days':
+      return { startDate: subMonths(now, 3).toISOString(), endDate: endOfToday().toISOString() };
+    case 'all_time':
+    default:
+      return { startDate: undefined, endDate: undefined };
+  }
+};
+
+const fetchAnalyticsData = async (userId: string, filter: DateRangeFilter) => {
+  const { startDate, endDate } = getDateRange(filter);
+
+  let clientsQuery = supabase.from('clients').select('id, status, created_at').eq('user_id', userId);
+  if (startDate && endDate) {
+    clientsQuery = clientsQuery.gte('created_at', startDate).lte('created_at', endDate);
+  }
+  const { data: clients, error: clientsError } = await clientsQuery;
   if (clientsError) throw new Error(clientsError.message);
 
-  const now = new Date();
-  const startDate = startOfMonth(now).toISOString();
-  const endDate = endOfMonth(now).toISOString();
-
-  const { count: followUpsThisMonth, error: followUpsError } = await supabase
-    .from('follow_ups')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .gte('created_at', startDate)
-    .lte('created_at', endDate);
-
+  let followUpsQuery = supabase.from('follow_ups').select('*', { count: 'exact', head: true }).eq('user_id', userId);
+  if (startDate && endDate) {
+    followUpsQuery = followUpsQuery.gte('created_at', startDate).lte('created_at', endDate);
+  }
+  const { count: followUpsCount, error: followUpsError } = await followUpsQuery;
   if (followUpsError) throw new Error(followUpsError.message);
 
   const totalClients = clients.length;
@@ -64,7 +80,7 @@ const fetchAnalyticsData = async (userId: string) => {
     totalClients,
     contractedClients,
     conversionRate,
-    followUpsThisMonth: followUpsThisMonth || 0,
+    followUpsThisMonth: followUpsCount || 0,
     chartData,
     newClients,
     contactLaterClients,
@@ -73,19 +89,27 @@ const fetchAnalyticsData = async (userId: string) => {
 
 const ReportsPage = () => {
   const { session } = useSession();
+  const [dateFilter, setDateFilter] = useState<DateRangeFilter>('this_month');
+
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['analytics', session?.user?.id],
-    queryFn: () => fetchAnalyticsData(session!.user!.id),
+    queryKey: ['analytics', session?.user?.id, dateFilter],
+    queryFn: () => fetchAnalyticsData(session!.user!.id, dateFilter),
     enabled: !!session?.user?.id,
   });
 
   const handleExport = async (type: 'clients' | 'follow_ups') => {
     if (!session?.user) return;
     const toastId = showLoading(`جاري تصدير ${type === 'clients' ? 'العملاء' : 'المتابعات'}...`);
+    
+    const { startDate, endDate } = getDateRange(dateFilter);
 
     try {
       if (type === 'clients') {
-        const { data: clients, error } = await supabase.from('clients').select('*').eq('user_id', session.user.id);
+        let query = supabase.from('clients').select('*').eq('user_id', session.user.id);
+        if (startDate && endDate) {
+          query = query.gte('created_at', startDate).lte('created_at', endDate);
+        }
+        const { data: clients, error } = await query;
         if (error) throw error;
         const headers = [
           { key: 'company_name', label: 'اسم الشركة' },
@@ -97,13 +121,17 @@ const ReportsPage = () => {
           { key: 'status', label: 'الحالة' },
           { key: 'created_at', label: 'تاريخ الإنشاء' },
         ];
-        downloadCSV(clients, headers, 'clients_export');
+        downloadCSV(clients, headers, `clients_export_${dateFilter}`);
       } else {
         const { data: clientsData, error: clientsError } = await supabase.from('clients').select('id, company_name').eq('user_id', session.user.id);
         if (clientsError) throw clientsError;
         const clientMap = new Map(clientsData.map(c => [c.id, c.company_name]));
 
-        const { data: followUps, error } = await supabase.from('follow_ups_with_user').select('*').eq('user_id', session.user.id);
+        let query = supabase.from('follow_ups_with_user').select('*').eq('user_id', session.user.id);
+        if (startDate && endDate) {
+          query = query.gte('created_at', startDate).lte('created_at', endDate);
+        }
+        const { data: followUps, error } = await query;
         if (error) throw error;
 
         const enrichedFollowUps = followUps.map(f => ({
@@ -119,7 +147,7 @@ const ReportsPage = () => {
           { key: 'created_at', label: 'تاريخ الإنشاء' },
           { key: 'full_name', label: 'بواسطة' },
         ];
-        downloadCSV(enrichedFollowUps, headers, 'follow_ups_export');
+        downloadCSV(enrichedFollowUps, headers, `follow_ups_export_${dateFilter}`);
       }
       showSuccess('تم التصدير بنجاح!');
     } catch (err: any) {
@@ -131,14 +159,29 @@ const ReportsPage = () => {
 
   return (
     <div dir="rtl" className="container mx-auto p-4 md:p-8">
-      <header className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">التقارير والتحليلات</h1>
-        <Button asChild variant="outline">
-          <Link to="/">
-            <ArrowRight className="ml-2 h-4 w-4" />
-            العودة للرئيسية
-          </Link>
-        </Button>
+      <header className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+        <div className="flex-1">
+            <h1 className="text-2xl font-bold">التقارير والتحليلات</h1>
+        </div>
+        <div className="flex items-center gap-2">
+            <Select value={dateFilter} onValueChange={(value) => setDateFilter(value as DateRangeFilter)}>
+                <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="اختر نطاق زمني" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="this_month">هذا الشهر</SelectItem>
+                    <SelectItem value="last_month">الشهر الماضي</SelectItem>
+                    <SelectItem value="last_90_days">آخر 90 يومًا</SelectItem>
+                    <SelectItem value="all_time">كل الأوقات</SelectItem>
+                </SelectContent>
+            </Select>
+            <Button asChild variant="outline">
+            <Link to="/">
+                <ArrowRight className="ml-2 h-4 w-4" />
+                العودة
+            </Link>
+            </Button>
+        </div>
       </header>
       
       {isLoading ? (
@@ -193,7 +236,7 @@ const ReportsPage = () => {
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">المتابعات هذا الشهر</CardTitle>
+                  <CardTitle className="text-sm font-medium">المتابعات</CardTitle>
                   <Activity className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -255,7 +298,7 @@ const ReportsPage = () => {
             <Card>
               <CardHeader>
                 <CardTitle>تصدير البيانات</CardTitle>
-                <CardDescription>قم بتنزيل بيانات العملاء والمتابعات كملف CSV.</CardDescription>
+                <CardDescription>قم بتنزيل بيانات العملاء والمتابعات كملف CSV للفترة الزمنية المحددة.</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col sm:flex-row gap-4">
                 <Button onClick={() => handleExport('clients')}>
