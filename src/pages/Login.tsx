@@ -6,7 +6,7 @@ const Login = () => {
   return (
     <div className="flex flex-col justify-center items-center min-h-screen bg-gray-100 p-4">
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
-        <img src="https://dtgiroqrqxzzdicwhsbw.supabase.co/storage/v1/object/public/public-assets/Smart-Logo-Horizontal.jpg" alt="Smart Fuel Logo" className="h-12 mx-auto" />
+        <img src="https://wxhinjdceqneufvanfqe.supabase.co/storage/v1/object/public/public-assets/Smart-Logo-Horizontal.jpg" alt="Smart Fuel Logo" className="h-12 mx-auto" />
         <Auth
           supabaseClient={supabase}
           appearance={{ theme: ThemeSupa }}

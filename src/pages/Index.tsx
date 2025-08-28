@@ -26,7 +26,7 @@ const Index = () => {
   return (
     <div dir="rtl" className="container mx-auto p-4 md:p-8">
       <header className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-        <img src="https://dtgiroqrqxzzdicwhsbw.supabase.co/storage/v1/object/public/public-assets/Smart-Logo-Horizontal.jpg" alt="Smart Fuel Logo" className="h-12" />
+        <img src="https://wxhinjdceqneufvanfqe.supabase.co/storage/v1/object/public/public-assets/Smart-Logo-Horizontal.jpg" alt="Smart Fuel Logo" className="h-12" />
         <div className="flex items-center gap-2">
           <UpcomingFollowUps />
           <Button asChild variant="outline">
