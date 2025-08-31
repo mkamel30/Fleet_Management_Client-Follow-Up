@@ -228,7 +228,7 @@ export const ClientsTable = () => {
       });
     }
 
-    // Create Outlook Web URL for reliable email opening
+    // Create Outlook Web URL
     const outlookUrl = `https://outlook.office.com/owa/?path=/mail/action/compose&to=${encodeURIComponent(client.email)}`;
     const urlParams = new URLSearchParams();
     
