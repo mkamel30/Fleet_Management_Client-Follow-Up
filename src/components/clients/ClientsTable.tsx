@@ -228,11 +228,18 @@ export const ClientsTable = () => {
       });
     }
 
-    // Create mailto link with proper encoding
-    const mailtoLink = `mailto:${encodeURIComponent(client.email)}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    // Create Outlook Web URL for reliable email opening
+    const outlookUrl = `https://outlook.office.com/owa/?path=/mail/action/compose&to=${encodeURIComponent(client.email)}`;
+    const urlParams = new URLSearchParams();
+    
+    if (subject) urlParams.append('subject', subject);
+    if (cc) urlParams.append('cc', cc);
+    if (body) urlParams.append('body', body);
+    
+    const finalUrl = `${outlookUrl}&${urlParams.toString()}`;
     
     await logActionAsFollowUp(client, 'email');
-    window.open(mailtoLink, "_blank");
+    window.open(finalUrl, '_blank', 'noopener,noreferrer');
   };
 
   const createWhatsAppLink = (client: Client, template: MessageTemplate | undefined) => {
@@ -398,7 +405,7 @@ export const ClientsTable = () => {
                             <AlertDialogHeader>
                               <AlertDialogTitle>تأكيد إرسال البريد الإلكتروني</AlertDialogTitle>
                               <AlertDialogDescription>
-                                سيتم فتح البريد الإلكتروني الافتراضي برسالة مكتملة. هل أنت متأكد من المتابعة؟
+                                سيتم فتح Outlook في المتصفح برسالة مكتملة. هل أنت متأكد من المتابعة؟
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
