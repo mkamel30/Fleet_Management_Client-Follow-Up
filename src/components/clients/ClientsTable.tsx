@@ -228,18 +228,16 @@ export const ClientsTable = () => {
       });
     }
 
-    // Create Outlook Web URL
-    const outlookUrl = `https://outlook.office.com/owa/?path=/mail/action/compose&to=${encodeURIComponent(client.email)}`;
-    const urlParams = new URLSearchParams();
+    const queryParts = [];
+    if (subject) queryParts.push(`subject=${encodeURIComponent(subject)}`);
+    if (cc) queryParts.push(`cc=${encodeURIComponent(cc)}`);
+    if (body) queryParts.push(`body=${encodeURIComponent(body)}`);
     
-    if (subject) urlParams.append('subject', subject);
-    if (cc) urlParams.append('cc', cc);
-    if (body) urlParams.append('body', body);
-    
-    const finalUrl = `${outlookUrl}&${urlParams.toString()}`;
+    const queryString = queryParts.join('&');
+    const mailtoLink = `mailto:${client.email}?${queryString}`;
     
     await logActionAsFollowUp(client, 'email');
-    window.open(finalUrl, '_blank', 'noopener,noreferrer');
+    window.open(mailtoLink, '_self');
   };
 
   const createWhatsAppLink = (client: Client, template: MessageTemplate | undefined) => {
@@ -405,7 +403,7 @@ export const ClientsTable = () => {
                             <AlertDialogHeader>
                               <AlertDialogTitle>تأكيد إرسال البريد الإلكتروني</AlertDialogTitle>
                               <AlertDialogDescription>
-                                سيتم فتح Outlook في المتصفح برسالة مكتملة. هل أنت متأكد من المتابعة؟
+                                سيتم فتح برنامج البريد الإلكتروني الخاص بك برسالة مكتملة. هل أنت متأكد من المتابعة؟
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
