@@ -213,7 +213,7 @@ export const ClientsTable = () => {
 
   const handleEmailClick = async (client: Client) => {
     if (!client.email) {
-      showError("This client does not have an email address.");
+      showError("هذا العميل لا يملك بريدًا إلكترونيًا.");
       return;
     }
 
@@ -222,25 +222,16 @@ export const ClientsTable = () => {
     const cc = emailTemplate?.cc || '';
 
     if (emailTemplate?.attachments && emailTemplate.attachments.length > 0) {
-      body += `\n\n\nAttachments (download links):`;
+      body += `\n\n\nالمرفقات (روابط التنزيل):`;
       emailTemplate.attachments.forEach(att => {
         body += `\n- ${att.file_name}:\n${att.file_url}`;
       });
     }
 
-    if (body) {
-      try {
-        await navigator.clipboard.writeText(body);
-        showSuccess("تم نسخ نص البريد الإلكتروني إلى الحافظة. يرجى لصقه في رسالتك.");
-      } catch (err) {
-        console.error("Failed to copy email body:", err);
-        showError("Could not copy email body to clipboard.");
-      }
-    }
-
     const queryParts = [];
     if (subject) queryParts.push(`subject=${encodeURIComponent(subject)}`);
     if (cc) queryParts.push(`cc=${encodeURIComponent(cc)}`);
+    if (body) queryParts.push(`body=${encodeURIComponent(body)}`);
     
     const queryString = queryParts.join('&');
     const mailtoLink = `mailto:${client.email}?${queryString}`;
@@ -271,7 +262,7 @@ export const ClientsTable = () => {
 
   const handleWhatsAppClick = async (client: Client) => {
     if (!client.phone) {
-      showError("This client does not have a phone number.");
+      showError("هذا العميل لا يملك رقم هاتف.");
       return;
     }
     const link = createWhatsAppLink(client, whatsappTemplate);
@@ -412,7 +403,7 @@ export const ClientsTable = () => {
                             <AlertDialogHeader>
                               <AlertDialogTitle>تأكيد إرسال البريد الإلكتروني</AlertDialogTitle>
                               <AlertDialogDescription>
-                                سيتم فتح برنامج البريد الإلكتروني الخاص بك. تم نسخ محتوى الرسالة إلى الحافظة، كل ما عليك هو لصقه في جسم الرسالة.
+                                سيتم فتح برنامج البريد الإلكتروني الخاص بك برسالة مكتملة. هل أنت متأكد من المتابعة؟
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
