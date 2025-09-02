@@ -9,4 +9,5 @@ export interface Client {
   fuel_type: string | null;
   status: string | null;
   created_at: string;
+  address: string | null;
 }

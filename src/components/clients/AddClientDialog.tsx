@@ -40,6 +40,7 @@ const clientSchema = z.object({
   contact_person: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().email({ message: "بريد إلكتروني غير صالح" }).optional().or(z.literal("")),
+  address: z.string().optional(),
   number_of_cars: z.coerce.number().int().positive({ message: "يجب أن يكون عدد السيارات رقمًا" }).optional(),
   fuel_type: z.enum(["بنزين", "سولار"]).optional(),
 });
@@ -58,6 +59,7 @@ export const AddClientDialog = () => {
       contact_person: "",
       phone: "",
       email: "",
+      address: "",
       number_of_cars: undefined,
       fuel_type: undefined,
     },
@@ -150,6 +152,19 @@ export const AddClientDialog = () => {
                   <FormLabel>البريد الإلكتروني</FormLabel>
                   <FormControl>
                     <Input placeholder="email@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>العنوان</FormLabel>
+                  <FormControl>
+                    <Input placeholder="عنوان العميل" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

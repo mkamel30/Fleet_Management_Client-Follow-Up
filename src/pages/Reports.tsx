@@ -116,6 +116,7 @@ const ReportsPage = () => {
           { key: 'contact_person', label: 'الشخص المسؤول' },
           { key: 'phone', label: 'الهاتف' },
           { key: 'email', label: 'البريد الإلكتروني' },
+          { key: 'address', label: 'العنوان' },
           { key: 'number_of_cars', label: 'عدد السيارات' },
           { key: 'fuel_type', label: 'نوع الوقود' },
           { key: 'status', label: 'الحالة' },

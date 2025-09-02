@@ -331,6 +331,11 @@ export const ClientsTable = () => {
             <TableHead className="text-right">الهاتف</TableHead>
             <TableHead className="text-right">البريد الإلكتروني</TableHead>
             <TableHead className="text-right">
+                <Button variant="ghost" onClick={() => requestSort('address')}>
+                    العنوان {getSortIcon('address')}
+                </Button>
+            </TableHead>
+            <TableHead className="text-right">
               <Button variant="ghost" onClick={() => requestSort('number_of_cars')}>
                 عدد السيارات {getSortIcon('number_of_cars')}
               </Button>
@@ -356,6 +361,7 @@ export const ClientsTable = () => {
                 <TableCell>{client.contact_person || "-"}</TableCell>
                 <TableCell>{client.phone || "-"}</TableCell>
                 <TableCell>{client.email || "-"}</TableCell>
+                <TableCell>{client.address || "-"}</TableCell>
                 <TableCell>{client.number_of_cars || "-"}</TableCell>
                 <TableCell>{client.fuel_type || "-"}</TableCell>
                 <TableCell>
@@ -460,7 +466,7 @@ export const ClientsTable = () => {
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={8} className="h-24 text-center">
+              <TableCell colSpan={9} className="h-24 text-center">
                 {clients && clients.length > 0 ? "لم يتم العثور على عملاء يطابقون بحثك." : "لا يوجد عملاء حتى الآن. قم بإضافة عميل جديد للبدء."}
               </TableCell>
             </TableRow>
