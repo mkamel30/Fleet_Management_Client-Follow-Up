@@ -43,6 +43,7 @@ import { format } from "date-fns";
 const followUpSchema = z.object({
   feedback: z.string().min(1, { message: "يجب إدخال ملاحظات" }),
   status: z.string({ required_error: "الحالة مطلوبة" }),
+  follow_up_date: z.date({ required_error: "تاريخ المتابعة مطلوب" }),
   next_follow_up_date: z.date().optional(),
 });
 
@@ -88,6 +89,12 @@ export const AddFollowUpDialog = ({ client, children }: AddFollowUpDialogProps) 
 
   const form = useForm<FollowUpFormValues>({
     resolver: zodResolver(followUpSchema),
+    defaultValues: {
+        feedback: "",
+        status: undefined,
+        follow_up_date: new Date(),
+        next_follow_up_date: undefined,
+    }
   });
 
   const status = form.watch("status");
@@ -95,13 +102,13 @@ export const AddFollowUpDialog = ({ client, children }: AddFollowUpDialogProps) 
   const onSubmit = async (values: FollowUpFormValues) => {
     if (!session?.user) return;
 
-    // Use a transaction to ensure both operations succeed or fail together
     const { error } = await supabase.rpc('add_follow_up_and_update_client', {
         p_client_id: client.id,
         p_user_id: session.user.id,
         p_feedback: values.feedback,
         p_status: values.status,
-        p_next_follow_up_date: values.next_follow_up_date ? values.next_follow_up_date.toISOString() : null
+        p_next_follow_up_date: values.next_follow_up_date ? values.next_follow_up_date.toISOString() : null,
+        p_created_at: values.follow_up_date.toISOString()
     });
 
     if (error) {
@@ -140,6 +147,45 @@ export const AddFollowUpDialog = ({ client, children }: AddFollowUpDialogProps) 
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+                control={form.control}
+                name="follow_up_date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>تاريخ المتابعة</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>اختر تاريخ</span>
+                            )}
+                            <CalendarIcon className="mr-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) => date > new Date()}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             <FormField
               control={form.control}
               name="feedback"

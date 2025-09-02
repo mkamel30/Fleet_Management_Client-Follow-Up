@@ -109,7 +109,8 @@ serve(async (req) => {
         p_user_id: followUp.user_id,
         p_feedback: `تم إرسال بريد إلكتروني تلقائي للمتابعة.`,
         p_status: client.status, // Keep the current status
-        p_next_follow_up_date: null
+        p_next_follow_up_date: null,
+        p_created_at: new Date().toISOString()
       });
 
       // Also clear the date on the original follow-up record to be safe
