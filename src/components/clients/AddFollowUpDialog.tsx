@@ -102,13 +102,16 @@ export const AddFollowUpDialog = ({ client, children }: AddFollowUpDialogProps) 
   const onSubmit = async (values: FollowUpFormValues) => {
     if (!session?.user) return;
 
+    const localUserName = localStorage.getItem(`local_user_name_${session.user.id}`) || session.user.email || "مستخدم غير معروف";
+
     const { error } = await supabase.rpc('add_follow_up_and_update_client', {
         p_client_id: client.id,
         p_user_id: session.user.id,
         p_feedback: values.feedback,
         p_status: values.status,
         p_next_follow_up_date: values.next_follow_up_date ? values.next_follow_up_date.toISOString() : null,
-        p_created_at: values.follow_up_date.toISOString()
+        p_created_at: values.follow_up_date.toISOString(),
+        p_user_full_name: localUserName,
     });
 
     if (error) {

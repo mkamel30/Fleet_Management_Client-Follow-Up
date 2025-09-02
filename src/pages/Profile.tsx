@@ -1,8 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/SessionContext";
 import {
   Form,
@@ -15,9 +13,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { showSuccess, showError } from "@/utils/toast";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useEffect } from "react";
+import { showSuccess } from "@/utils/toast";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 
@@ -27,45 +24,9 @@ const profileSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
-interface Profile {
-  id: string;
-  full_name: string | null;
-  updated_at: string;
-}
-
-const fetchProfile = async (userId: string): Promise<Profile | null> => {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", userId)
-    .single();
-
-  if (error && error.code !== "PGRST116") { // PGRST116: no rows found
-    throw new Error(error.message);
-  }
-  return data;
-};
-
-const updateProfile = async ({ userId, values }: { userId: string; values: ProfileFormValues }) => {
-  const { error } = await supabase
-    .from("profiles")
-    .update({ full_name: values.full_name, updated_at: new Date().toISOString() })
-    .eq("id", userId);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-};
-
 const ProfilePage = () => {
   const { session } = useSession();
-  const queryClient = useQueryClient();
-
-  const { data: profile, isLoading } = useQuery({
-    queryKey: ["profile", session?.user?.id],
-    queryFn: () => fetchProfile(session!.user!.id),
-    enabled: !!session?.user?.id,
-  });
+  const [isSaving, setIsSaving] = useState(false);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -75,45 +36,32 @@ const ProfilePage = () => {
   });
 
   useEffect(() => {
-    if (profile) {
+    if (session?.user?.id) {
+      const storedName = localStorage.getItem(`local_user_name_${session.user.id}`);
       form.reset({
-        full_name: profile.full_name || "",
+        full_name: storedName || session.user.email || "",
       });
     }
-  }, [profile, form]);
-
-  const mutation = useMutation({
-    mutationFn: (values: ProfileFormValues) => updateProfile({ userId: session!.user!.id, values }),
-    onSuccess: () => {
-      showSuccess("تم تحديث الملف الشخصي بنجاح!");
-      queryClient.invalidateQueries({ queryKey: ["profile", session?.user?.id] });
-      queryClient.invalidateQueries({ queryKey: ["followUps"] });
-    },
-    onError: (error) => {
-      showError(`حدث خطأ: ${error.message}`);
-    },
-  });
+  }, [session, form]);
 
   const onSubmit = (values: ProfileFormValues) => {
     if (!session?.user) return;
-    mutation.mutate(values);
+    setIsSaving(true);
+    try {
+      localStorage.setItem(`local_user_name_${session.user.id}`, values.full_name);
+      showSuccess("تم حفظ الاسم بنجاح في هذا المتصفح!");
+    } finally {
+      setIsSaving(false);
+    }
   };
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto p-4 md:p-8 flex justify-center">
-        <Skeleton className="h-64 w-full max-w-lg" />
-      </div>
-    );
-  }
 
   return (
     <div dir="rtl" className="container mx-auto p-4 md:p-8 flex flex-col items-center">
         <Card className="w-full max-w-lg">
             <CardHeader>
-                <CardTitle>الملف الشخصي</CardTitle>
+                <CardTitle>الملف الشخصي المحلي</CardTitle>
                 <CardDescription>
-                قم بتحديث اسمك الكامل هنا. سيظهر هذا الاسم في سجلات المتابعة.
+                قم بتحديث اسمك الكامل هنا. سيتم حفظ هذا الاسم في متصفحك الحالي فقط وسيظهر في سجلات المتابعة التي تنشئها من هذا الجهاز.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -133,8 +81,8 @@ const ProfilePage = () => {
                     )}
                     />
                     <div className="flex justify-between items-center">
-                        <Button type="submit" disabled={mutation.isPending}>
-                            {mutation.isPending ? "جاري الحفظ..." : "حفظ التغييرات"}
+                        <Button type="submit" disabled={isSaving}>
+                            {isSaving ? "جاري الحفظ..." : "حفظ التغييرات"}
                         </Button>
                         <Button asChild variant="outline">
                             <Link to="/">
