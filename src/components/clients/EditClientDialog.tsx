@@ -86,7 +86,7 @@ export const EditClientDialog = ({ client, children }: EditClientDialogProps) =>
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]" dir="rtl">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle>تعديل بيانات العميل</DialogTitle>
           <DialogDescription>
@@ -94,7 +94,7 @@ export const EditClientDialog = ({ client, children }: EditClientDialogProps) =>
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
             <FormField
               control={form.control}
               name="company_name"

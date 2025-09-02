@@ -293,15 +293,15 @@ export const ClientsTable = () => {
 
   return (
     <div dir="rtl">
-      <div className="flex items-center gap-4 mb-4">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-4">
         <Input
           placeholder="ابحث باسم الشركة أو الشخص المسؤول..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
+          className="w-full sm:max-w-sm"
         />
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="فلترة حسب الحالة" />
           </SelectTrigger>
           <SelectContent>
@@ -314,165 +314,167 @@ export const ClientsTable = () => {
           </SelectContent>
         </Select>
       </div>
-      <Table>
-        <TableCaption>قائمة بجميع عملائك.</TableCaption>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="text-right">
-              <Button variant="ghost" onClick={() => requestSort('company_name')}>
-                اسم الشركة {getSortIcon('company_name')}
-              </Button>
-            </TableHead>
-            <TableHead className="text-right">
-              <Button variant="ghost" onClick={() => requestSort('contact_person')}>
-                الشخص المسؤول {getSortIcon('contact_person')}
-              </Button>
-            </TableHead>
-            <TableHead className="text-right">الهاتف</TableHead>
-            <TableHead className="text-right">البريد الإلكتروني</TableHead>
-            <TableHead className="text-right">
-                <Button variant="ghost" onClick={() => requestSort('address')}>
-                    العنوان {getSortIcon('address')}
+      <div className="border rounded-lg overflow-x-auto">
+        <Table>
+          <TableCaption>قائمة بجميع عملائك.</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-right">
+                <Button variant="ghost" onClick={() => requestSort('company_name')}>
+                  اسم الشركة {getSortIcon('company_name')}
                 </Button>
-            </TableHead>
-            <TableHead className="text-right">
-              <Button variant="ghost" onClick={() => requestSort('number_of_cars')}>
-                عدد السيارات {getSortIcon('number_of_cars')}
-              </Button>
-            </TableHead>
-            <TableHead className="text-right">
-              <Button variant="ghost" onClick={() => requestSort('fuel_type')}>
-                نوع الوقود {getSortIcon('fuel_type')}
-              </Button>
-            </TableHead>
-            <TableHead className="text-right">
-              <Button variant="ghost" onClick={() => requestSort('status')}>
-                الحالة {getSortIcon('status')}
-              </Button>
-            </TableHead>
-            <TableHead className="text-right">الإجراءات</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {processedClients && processedClients.length > 0 ? (
-            processedClients.map((client) => (
-              <TableRow key={client.id}>
-                <TableCell className="font-medium">{client.company_name}</TableCell>
-                <TableCell>{client.contact_person || "-"}</TableCell>
-                <TableCell>{client.phone || "-"}</TableCell>
-                <TableCell>{client.email || "-"}</TableCell>
-                <TableCell>{client.address || "-"}</TableCell>
-                <TableCell>{client.number_of_cars || "-"}</TableCell>
-                <TableCell>{client.fuel_type || "-"}</TableCell>
-                <TableCell>
-                  <Badge className={getStatusBadgeClass(client.status)}>
-                    {client.status || "جديد"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">فتح القائمة</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                      <AddFollowUpDialog client={client}>
-                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                              <PlusCircle className="ml-2 h-4 w-4" />
-                              <span>إضافة متابعة</span>
-                          </DropdownMenuItem>
-                      </AddFollowUpDialog>
-                      <FollowUpHistoryDialog client={client}>
-                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                              <History className="ml-2 h-4 w-4" />
-                              <span>عرض السجل</span>
-                          </DropdownMenuItem>
-                      </FollowUpHistoryDialog>
-                      <ClientNotesDialog client={client}>
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                          <StickyNote className="ml-2 h-4 w-4" />
-                          <span>الملاحظات</span>
-                        </DropdownMenuItem>
-                      </ClientNotesDialog>
-                      <DropdownMenuSeparator />
-                      <EditClientDialog client={client}>
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                          <Edit className="ml-2 h-4 w-4" />
-                          <span>تعديل</span>
-                        </DropdownMenuItem>
-                      </EditClientDialog>
-                      {client.email && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
+              </TableHead>
+              <TableHead className="text-right">
+                <Button variant="ghost" onClick={() => requestSort('contact_person')}>
+                  الشخص المسؤول {getSortIcon('contact_person')}
+                </Button>
+              </TableHead>
+              <TableHead className="text-right">الهاتف</TableHead>
+              <TableHead className="text-right">البريد الإلكتروني</TableHead>
+              <TableHead className="text-right">
+                  <Button variant="ghost" onClick={() => requestSort('address')}>
+                      العنوان {getSortIcon('address')}
+                  </Button>
+              </TableHead>
+              <TableHead className="text-right">
+                <Button variant="ghost" onClick={() => requestSort('number_of_cars')}>
+                  عدد السيارات {getSortIcon('number_of_cars')}
+                </Button>
+              </TableHead>
+              <TableHead className="text-right">
+                <Button variant="ghost" onClick={() => requestSort('fuel_type')}>
+                  نوع الوقود {getSortIcon('fuel_type')}
+                </Button>
+              </TableHead>
+              <TableHead className="text-right">
+                <Button variant="ghost" onClick={() => requestSort('status')}>
+                  الحالة {getSortIcon('status')}
+                </Button>
+              </TableHead>
+              <TableHead className="text-right">الإجراءات</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {processedClients && processedClients.length > 0 ? (
+              processedClients.map((client) => (
+                <TableRow key={client.id}>
+                  <TableCell className="font-medium">{client.company_name}</TableCell>
+                  <TableCell>{client.contact_person || "-"}</TableCell>
+                  <TableCell>{client.phone || "-"}</TableCell>
+                  <TableCell>{client.email || "-"}</TableCell>
+                  <TableCell>{client.address || "-"}</TableCell>
+                  <TableCell>{client.number_of_cars || "-"}</TableCell>
+                  <TableCell>{client.fuel_type || "-"}</TableCell>
+                  <TableCell>
+                    <Badge className={getStatusBadgeClass(client.status)}>
+                      {client.status || "جديد"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">فتح القائمة</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
+                        <AddFollowUpDialog client={client}>
                             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                              <Mail className="ml-2 h-4 w-4" />
-                              <span>إرسال بريد إلكتروني</span>
+                                <PlusCircle className="ml-2 h-4 w-4" />
+                                <span>إضافة متابعة</span>
                             </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent dir="rtl">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>تأكيد إرسال البريد الإلكتروني</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                سيتم فتح برنامج البريد الإلكتروني الخاص بك. تم نسخ محتوى الرسالة إلى الحافظة، كل ما عليك هو لصقه في جسم الرسالة.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleEmailClick(client)}>
-                                متابعة
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                      {client.phone && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
+                        </AddFollowUpDialog>
+                        <FollowUpHistoryDialog client={client}>
                             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                              <MessageSquare className="ml-2 h-4 w-4" />
-                              <span>إرسال واتساب</span>
+                                <History className="ml-2 h-4 w-4" />
+                                <span>عرض السجل</span>
                             </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent dir="rtl">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>تأكيد إرسال رسالة واتساب</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                هل أنت متأكد أنك تريد فتح واتساب لإرسال رسالة إلى هذا العميل؟
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleWhatsAppClick(client)}>
-                                متابعة
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                      <DropdownMenuSeparator />
-                      <DeleteClientAlert clientId={client.id}>
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600 focus:text-red-600">
-                          <Trash2 className="ml-2 h-4 w-4" />
-                          <span>حذف</span>
-                        </DropdownMenuItem>
-                      </DeleteClientAlert>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        </FollowUpHistoryDialog>
+                        <ClientNotesDialog client={client}>
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                            <StickyNote className="ml-2 h-4 w-4" />
+                            <span>الملاحظات</span>
+                          </DropdownMenuItem>
+                        </ClientNotesDialog>
+                        <DropdownMenuSeparator />
+                        <EditClientDialog client={client}>
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                            <Edit className="ml-2 h-4 w-4" />
+                            <span>تعديل</span>
+                          </DropdownMenuItem>
+                        </EditClientDialog>
+                        {client.email && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <Mail className="ml-2 h-4 w-4" />
+                                <span>إرسال بريد إلكتروني</span>
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent dir="rtl">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>تأكيد إرسال البريد الإلكتروني</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  سيتم فتح برنامج البريد الإلكتروني الخاص بك. تم نسخ محتوى الرسالة إلى الحافظة، كل ما عليك هو لصقه في جسم الرسالة.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleEmailClick(client)}>
+                                  متابعة
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                        {client.phone && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <MessageSquare className="ml-2 h-4 w-4" />
+                                <span>إرسال واتساب</span>
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent dir="rtl">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>تأكيد إرسال رسالة واتساب</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  هل أنت متأكد أنك تريد فتح واتساب لإرسال رسالة إلى هذا العميل؟
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleWhatsAppClick(client)}>
+                                  متابعة
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                        <DropdownMenuSeparator />
+                        <DeleteClientAlert clientId={client.id}>
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600 focus:text-red-600">
+                            <Trash2 className="ml-2 h-4 w-4" />
+                            <span>حذف</span>
+                          </DropdownMenuItem>
+                        </DeleteClientAlert>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={9} className="h-24 text-center">
+                  {clients && clients.length > 0 ? "لم يتم العثور على عملاء يطابقون بحثك." : "لا يوجد عملاء حتى الآن. قم بإضافة عميل جديد للبدء."}
                 </TableCell>
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={9} className="h-24 text-center">
-                {clients && clients.length > 0 ? "لم يتم العثور على عملاء يطابقون بحثك." : "لا يوجد عملاء حتى الآن. قم بإضافة عميل جديد للبدء."}
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 };

@@ -44,14 +44,14 @@ export const FollowUpHistoryDialog = ({ client, children }: FollowUpHistoryDialo
   return (
     <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-2xl" dir="rtl">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col" dir="rtl">
         <DialogHeader>
           <DialogTitle>سجل المتابعة للعميل: {client.company_name}</DialogTitle>
           <DialogDescription>
             هنا يمكنك رؤية جميع المتابعات السابقة لهذا العميل.
           </DialogDescription>
         </DialogHeader>
-        <div className="mt-4 max-h-[60vh] overflow-y-auto pr-2">
+        <div className="mt-4 flex-1 overflow-y-auto pr-2">
           {isLoading ? (
             <div className="space-y-4">
                 <Skeleton className="h-24 w-full" />

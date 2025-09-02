@@ -137,7 +137,7 @@ export const AddFollowUpDialog = ({ client, children }: AddFollowUpDialogProps) 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]" dir="rtl">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle>إضافة متابعة للعميل: {client.company_name}</DialogTitle>
           <DialogDescription>
@@ -145,7 +145,7 @@ export const AddFollowUpDialog = ({ client, children }: AddFollowUpDialogProps) 
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
             <FormField
                 control={form.control}
                 name="follow_up_date"
