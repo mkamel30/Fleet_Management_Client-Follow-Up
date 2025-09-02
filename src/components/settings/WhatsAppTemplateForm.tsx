@@ -30,12 +30,12 @@ const whatsappSchema = z.object({
 
 type WhatsAppFormValues = z.infer<typeof whatsappSchema>;
 
-const fetchWhatsAppTemplate = async (userId: string): Promise<MessageTemplate | null> => {
+const fetchWhatsAppTemplate = async (): Promise<MessageTemplate | null> => {
   const { data, error } = await supabase
     .from("message_templates")
     .select("*, attachments:template_attachments(*)")
-    .eq("user_id", userId)
     .eq("type", "whatsapp")
+    .limit(1)
     .single();
 
   if (error && error.code !== "PGRST116") {
@@ -44,15 +44,35 @@ const fetchWhatsAppTemplate = async (userId: string): Promise<MessageTemplate | 
   return data as MessageTemplate | null;
 };
 
-const upsertWhatsAppTemplate = async ({ userId, values }: { userId: string; values: WhatsAppFormValues }) => {
-    const { data: templateData, error: upsertError } = await supabase.from("message_templates").upsert({
+const upsertWhatsAppTemplate = async ({ userId, values, existingTemplateId }: { userId: string; values: WhatsAppFormValues, existingTemplateId: string | null }) => {
+    const templatePayload = {
         user_id: userId,
-        type: "whatsapp",
+        type: "whatsapp" as const,
         body: values.body,
-    }, { onConflict: 'user_id,type' }).select().single();
+    };
 
-    if (upsertError) throw new Error(`Template upsert error: ${upsertError.message}`);
-    if (!templateData) throw new Error("Failed to upsert template data.");
+    let templateData;
+
+    if (existingTemplateId) {
+        const { data, error } = await supabase
+            .from("message_templates")
+            .update(templatePayload)
+            .eq("id", existingTemplateId)
+            .select()
+            .single();
+        if (error) throw new Error(`Template update error: ${error.message}`);
+        templateData = data;
+    } else {
+        const { data, error } = await supabase
+            .from("message_templates")
+            .insert(templatePayload)
+            .select()
+            .single();
+        if (error) throw new Error(`Template insert error: ${error.message}`);
+        templateData = data;
+    }
+    
+    if (!templateData) throw new Error("Failed to save template data.");
 
     const templateId = templateData.id;
     const files = values.attachments;
@@ -94,8 +114,8 @@ export const WhatsAppTemplateForm = () => {
   const queryClient = useQueryClient();
 
   const { data: template, isLoading } = useQuery({
-    queryKey: ["whatsappTemplate", session?.user?.id],
-    queryFn: () => fetchWhatsAppTemplate(session!.user!.id),
+    queryKey: ["whatsappTemplate"],
+    queryFn: fetchWhatsAppTemplate,
     enabled: !!session?.user?.id,
   });
 
@@ -116,10 +136,10 @@ export const WhatsAppTemplateForm = () => {
   }, [template, form]);
 
   const mutation = useMutation({
-    mutationFn: (values: WhatsAppFormValues) => upsertWhatsAppTemplate({ userId: session!.user!.id, values }),
+    mutationFn: (values: WhatsAppFormValues) => upsertWhatsAppTemplate({ userId: session!.user!.id, values, existingTemplateId: template?.id || null }),
     onSuccess: () => {
       showSuccess("تم حفظ قالب واتساب بنجاح!");
-      queryClient.invalidateQueries({ queryKey: ["whatsappTemplate", session?.user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["whatsappTemplate"] });
       queryClient.invalidateQueries({ queryKey: ["messageTemplates"] });
       form.setValue('attachments', undefined);
     },
@@ -132,7 +152,7 @@ export const WhatsAppTemplateForm = () => {
     mutationFn: removeAttachment,
     onSuccess: () => {
         showSuccess("تم حذف المرفق بنجاح.");
-        queryClient.invalidateQueries({ queryKey: ["whatsappTemplate", session?.user?.id] });
+        queryClient.invalidateQueries({ queryKey: ["whatsappTemplate"] });
         queryClient.invalidateQueries({ queryKey: ["messageTemplates"] });
     },
     onError: (error) => {

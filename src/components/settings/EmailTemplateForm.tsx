@@ -32,12 +32,12 @@ const emailSchema = z.object({
 
 type EmailFormValues = z.infer<typeof emailSchema>;
 
-const fetchEmailTemplate = async (userId: string): Promise<MessageTemplate | null> => {
+const fetchEmailTemplate = async (): Promise<MessageTemplate | null> => {
   const { data, error } = await supabase
     .from("message_templates")
     .select("*, attachments:template_attachments(*)")
-    .eq("user_id", userId)
     .eq("type", "email")
+    .limit(1)
     .single();
 
   if (error && error.code !== "PGRST116") {
@@ -46,17 +46,37 @@ const fetchEmailTemplate = async (userId: string): Promise<MessageTemplate | nul
   return data as MessageTemplate | null;
 };
 
-const upsertEmailTemplate = async ({ userId, values }: { userId: string; values: EmailFormValues }) => {
-    const { data: templateData, error: upsertError } = await supabase.from("message_templates").upsert({
+const upsertEmailTemplate = async ({ userId, values, existingTemplateId }: { userId: string; values: EmailFormValues, existingTemplateId: string | null }) => {
+    const templatePayload = {
         user_id: userId,
-        type: "email",
+        type: "email" as const,
         subject: values.subject,
         cc: values.cc,
         body: values.body,
-    }, { onConflict: 'user_id,type' }).select().single();
+    };
 
-    if (upsertError) throw new Error(`Template upsert error: ${upsertError.message}`);
-    if (!templateData) throw new Error("Failed to upsert template data.");
+    let templateData;
+
+    if (existingTemplateId) {
+        const { data, error } = await supabase
+            .from("message_templates")
+            .update(templatePayload)
+            .eq("id", existingTemplateId)
+            .select()
+            .single();
+        if (error) throw new Error(`Template update error: ${error.message}`);
+        templateData = data;
+    } else {
+        const { data, error } = await supabase
+            .from("message_templates")
+            .insert(templatePayload)
+            .select()
+            .single();
+        if (error) throw new Error(`Template insert error: ${error.message}`);
+        templateData = data;
+    }
+    
+    if (!templateData) throw new Error("Failed to save template data.");
 
     const templateId = templateData.id;
     const files = values.attachments;
@@ -98,8 +118,8 @@ export const EmailTemplateForm = () => {
   const queryClient = useQueryClient();
 
   const { data: template, isLoading } = useQuery({
-    queryKey: ["emailTemplate", session?.user?.id],
-    queryFn: () => fetchEmailTemplate(session!.user!.id),
+    queryKey: ["emailTemplate"],
+    queryFn: fetchEmailTemplate,
     enabled: !!session?.user?.id,
   });
 
@@ -124,10 +144,10 @@ export const EmailTemplateForm = () => {
   }, [template, form]);
 
   const mutation = useMutation({
-    mutationFn: (values: EmailFormValues) => upsertEmailTemplate({ userId: session!.user!.id, values }),
+    mutationFn: (values: EmailFormValues) => upsertEmailTemplate({ userId: session!.user!.id, values, existingTemplateId: template?.id || null }),
     onSuccess: () => {
       showSuccess("تم حفظ قالب البريد الإلكتروني بنجاح!");
-      queryClient.invalidateQueries({ queryKey: ["emailTemplate", session?.user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["emailTemplate"] });
       queryClient.invalidateQueries({ queryKey: ["messageTemplates"] });
       form.setValue('attachments', undefined);
     },
@@ -140,7 +160,7 @@ export const EmailTemplateForm = () => {
     mutationFn: removeAttachment,
     onSuccess: () => {
         showSuccess("تم حذف المرفق بنجاح.");
-        queryClient.invalidateQueries({ queryKey: ["emailTemplate", session?.user?.id] });
+        queryClient.invalidateQueries({ queryKey: ["emailTemplate"] });
         queryClient.invalidateQueries({ queryKey: ["messageTemplates"] });
     },
     onError: (error) => {

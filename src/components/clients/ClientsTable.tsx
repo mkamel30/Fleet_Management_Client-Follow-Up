@@ -69,11 +69,10 @@ const fetchClients = async (): Promise<Client[]> => {
   return data;
 };
 
-const fetchTemplates = async (userId: string): Promise<MessageTemplate[]> => {
+const fetchTemplates = async (): Promise<MessageTemplate[]> => {
   const { data, error } = await supabase
     .from("message_templates")
-    .select("*, attachments:template_attachments(*)")
-    .eq("user_id", userId);
+    .select("*, attachments:template_attachments(*)");
 
   if (error) throw new Error(`Failed to fetch templates: ${error.message}`);
   return (data as MessageTemplate[]) || [];
@@ -117,8 +116,8 @@ export const ClientsTable = () => {
     data: templates,
     isLoading: isLoadingTemplates,
   } = useQuery({
-    queryKey: ["messageTemplates", session?.user?.id],
-    queryFn: () => fetchTemplates(session!.user!.id),
+    queryKey: ["messageTemplates"],
+    queryFn: fetchTemplates,
     enabled: !!session?.user?.id,
   });
 
