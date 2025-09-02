@@ -26,8 +26,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -36,9 +34,7 @@ import { useSession } from "@/context/SessionContext";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { Client } from "@/types/client";
-import { cn } from "@/lib/utils";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { DateInputPicker } from "@/components/ui/DateInputPicker";
 
 const followUpSchema = z.object({
   feedback: z.string().min(1, { message: "يجب إدخال ملاحظات" }),
@@ -156,35 +152,14 @@ export const AddFollowUpDialog = ({ client, children }: AddFollowUpDialogProps) 
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>تاريخ المتابعة</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>اختر تاريخ</span>
-                            )}
-                            <CalendarIcon className="mr-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) => date > new Date()}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <FormControl>
+                      <DateInputPicker
+                        value={field.value}
+                        onChange={field.onChange}
+                        disabled={(date) => date > new Date()}
+                        placeholder="YYYY-MM-DD"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -232,35 +207,14 @@ export const AddFollowUpDialog = ({ client, children }: AddFollowUpDialogProps) 
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>تاريخ المتابعة التالية</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>اختر تاريخ</span>
-                            )}
-                            <CalendarIcon className="mr-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) => date < new Date()}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <FormControl>
+                      <DateInputPicker
+                        value={field.value}
+                        onChange={field.onChange}
+                        disabled={(date) => date < new Date()}
+                        placeholder="YYYY-MM-DD"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
