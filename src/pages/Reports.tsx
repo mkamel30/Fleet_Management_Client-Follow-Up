@@ -40,17 +40,17 @@ const getDateRange = (filter: DateRangeFilter): { startDate?: string, endDate?: 
   }
 };
 
-const fetchAnalyticsData = async (userId: string, filter: DateRangeFilter) => {
+const fetchAnalyticsData = async (filter: DateRangeFilter) => {
   const { startDate, endDate } = getDateRange(filter);
 
-  let clientsQuery = supabase.from('clients').select('id, status, created_at').eq('user_id', userId);
+  let clientsQuery = supabase.from('clients').select('id, status, created_at');
   if (startDate && endDate) {
     clientsQuery = clientsQuery.gte('created_at', startDate).lte('created_at', endDate);
   }
   const { data: clients, error: clientsError } = await clientsQuery;
   if (clientsError) throw new Error(clientsError.message);
 
-  let followUpsQuery = supabase.from('follow_ups').select('*', { count: 'exact', head: true }).eq('user_id', userId);
+  let followUpsQuery = supabase.from('follow_ups').select('*', { count: 'exact', head: true });
   if (startDate && endDate) {
     followUpsQuery = followUpsQuery.gte('created_at', startDate).lte('created_at', endDate);
   }
@@ -92,8 +92,8 @@ const ReportsPage = () => {
   const [dateFilter, setDateFilter] = useState<DateRangeFilter>('this_month');
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['analytics', session?.user?.id, dateFilter],
-    queryFn: () => fetchAnalyticsData(session!.user!.id, dateFilter),
+    queryKey: ['analytics', dateFilter],
+    queryFn: () => fetchAnalyticsData(dateFilter),
     enabled: !!session?.user?.id,
   });
 
@@ -105,7 +105,7 @@ const ReportsPage = () => {
 
     try {
       if (type === 'clients') {
-        let query = supabase.from('clients').select('*').eq('user_id', session.user.id);
+        let query = supabase.from('clients').select('*');
         if (startDate && endDate) {
           query = query.gte('created_at', startDate).lte('created_at', endDate);
         }
@@ -123,11 +123,11 @@ const ReportsPage = () => {
         ];
         downloadCSV(clients, headers, `clients_export_${dateFilter}`);
       } else {
-        const { data: clientsData, error: clientsError } = await supabase.from('clients').select('id, company_name').eq('user_id', session.user.id);
+        const { data: clientsData, error: clientsError } = await supabase.from('clients').select('id, company_name');
         if (clientsError) throw clientsError;
         const clientMap = new Map(clientsData.map(c => [c.id, c.company_name]));
 
-        let query = supabase.from('follow_ups_with_user').select('*').eq('user_id', session.user.id);
+        let query = supabase.from('follow_ups_with_user').select('*');
         if (startDate && endDate) {
           query = query.gte('created_at', startDate).lte('created_at', endDate);
         }

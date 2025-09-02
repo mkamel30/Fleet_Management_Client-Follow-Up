@@ -21,7 +21,7 @@ interface UpcomingFollowUp {
   }[] | null;
 }
 
-const fetchUpcomingFollowUps = async (userId: string): Promise<UpcomingFollowUp[]> => {
+const fetchUpcomingFollowUps = async (): Promise<UpcomingFollowUp[]> => {
   const { data, error } = await supabase
     .from('follow_ups')
     .select(`
@@ -30,7 +30,6 @@ const fetchUpcomingFollowUps = async (userId: string): Promise<UpcomingFollowUp[
       next_follow_up_date,
       client:clients ( company_name )
     `)
-    .eq('user_id', userId)
     .not('next_follow_up_date', 'is', null)
     .gte('next_follow_up_date', new Date().toISOString().split('T')[0]) // From today onwards
     .order('next_follow_up_date', { ascending: true });
@@ -58,8 +57,8 @@ export const UpcomingFollowUps = () => {
   const queryClient = useQueryClient();
 
   const { data: followUps, isLoading } = useQuery({
-    queryKey: ['upcomingFollowUps', session?.user?.id],
-    queryFn: () => fetchUpcomingFollowUps(session!.user!.id),
+    queryKey: ['upcomingFollowUps'],
+    queryFn: fetchUpcomingFollowUps,
     enabled: !!session?.user?.id,
     staleTime: 1000 * 60 * 5, // Refetch every 5 minutes
   });

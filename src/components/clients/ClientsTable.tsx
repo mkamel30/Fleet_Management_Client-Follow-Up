@@ -59,11 +59,10 @@ interface SortConfig {
   direction: SortDirection;
 }
 
-const fetchClients = async (userId: string): Promise<Client[]> => {
+const fetchClients = async (): Promise<Client[]> => {
   const { data, error } = await supabase
     .from("clients")
     .select("*")
-    .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
@@ -109,8 +108,8 @@ export const ClientsTable = () => {
     isError: isErrorClients,
     error: errorClients,
   } = useQuery({
-    queryKey: ["clients", session?.user?.id],
-    queryFn: () => fetchClients(session!.user!.id),
+    queryKey: ["clients"],
+    queryFn: fetchClients,
     enabled: !!session?.user?.id,
   });
 
