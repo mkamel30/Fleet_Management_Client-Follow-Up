@@ -157,7 +157,7 @@ export const AddFollowUpDialog = ({ client, children }: AddFollowUpDialogProps) 
                         value={field.value}
                         onChange={field.onChange}
                         disabled={(date) => date > new Date()}
-                        placeholder="YYYY-MM-DD"
+                        placeholder="DD-MM-YYYY"
                       />
                     </FormControl>
                     <FormMessage />
@@ -212,7 +212,7 @@ export const AddFollowUpDialog = ({ client, children }: AddFollowUpDialogProps) 
                         value={field.value}
                         onChange={field.onChange}
                         disabled={(date) => date < new Date()}
-                        placeholder="YYYY-MM-DD"
+                        placeholder="DD-MM-YYYY"
                       />
                     </FormControl>
                     <FormMessage />

@@ -17,13 +17,13 @@ interface DateInputPickerProps {
   placeholder?: string;
 }
 
-export function DateInputPicker({ value, onChange, disabled, placeholder = "YYYY-MM-DD" }: DateInputPickerProps) {
+export function DateInputPicker({ value, onChange, disabled, placeholder = "DD-MM-YYYY" }: DateInputPickerProps) {
   const [inputValue, setInputValue] = React.useState<string>("");
   const [popoverOpen, setPopoverOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (value && isValid(value)) {
-      setInputValue(format(value, "yyyy-MM-dd"));
+      setInputValue(format(value, "dd-MM-yyyy"));
     } else {
       setInputValue("");
     }
@@ -33,8 +33,8 @@ export function DateInputPicker({ value, onChange, disabled, placeholder = "YYYY
     const str = e.target.value;
     setInputValue(str);
 
-    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
-      const parsedDate = parse(str, "yyyy-MM-dd", new Date());
+    if (/^\d{2}-\d{2}-\d{4}$/.test(str)) {
+      const parsedDate = parse(str, "dd-MM-yyyy", new Date());
       if (isValid(parsedDate)) {
         if (!disabled || !disabled(parsedDate)) {
           onChange(parsedDate);
