@@ -16,17 +16,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,83 +26,67 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/SessionContext";
-import { PosClient } from "@/types/pos";
+import { POSClient } from "@/types/pos";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MoreHorizontal, Edit, Trash2, Phone, History, StickyNote, FileText } from "lucide-react";
-import { EditPosClientDialog } from "./EditPosClientDialog";
-import { DeletePosClientAlert } from "./DeletePosClientAlert";
+import { MoreHorizontal, Edit, Trash2, Phone, History, PlusCircle, ArrowUp, ArrowDown, StickyNote } from "lucide-react";
+import { EditPOSClientDialog } from "./EditPOSClientDialog";
+import { DeletePOSClientAlert } from "./DeletePOSClientAlert";
 import { AddCallLogDialog } from "./AddCallLogDialog";
 import { CallLogHistoryDialog } from "./CallLogHistoryDialog";
-import { PosClientNotesDialog } from "./PosClientNotesDialog";
+import { PosClientNotesDialog } from "./PosClientNotesDialog"; // This component will be created next
 import { showError, showSuccess } from "@/utils/toast";
 
 type SortDirection = 'asc' | 'desc';
-type SortablePosClientKeys = keyof PosClient;
+type SortableClientKeys = keyof POSClient;
 
 interface SortConfig {
-  key: SortablePosClientKeys;
+  key: SortableClientKeys;
   direction: SortDirection;
 }
 
-const fetchPosClients = async (): Promise<PosClient[]> => {
-  const { data, error } = await supabase
+const fetchPOSClients = async (searchTerm: string, departmentFilter: string): Promise<POSClient[]> => {
+  let query = supabase
     .from("pos_clients")
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (error) throw new Error(error.message);
-  return data;
-};
-
-const getStatusBadgeClass = (department: string | null) => {
-  switch (department) {
-    case 'تجزئة':
-      return 'bg-blue-500 text-white hover:bg-blue-500/90 border-transparent';
-    case 'خدمات':
-      return 'bg-green-500 text-white hover:bg-green-500/90 border-transparent';
-    case 'صناعة':
-      return 'bg-purple-500 text-white hover:bg-purple-500/90 border-transparent';
-    case 'حكومي':
-      return 'bg-orange-500 text-white hover:bg-orange-500/90 border-transparent';
-    default:
-      return 'bg-accent text-accent-foreground hover:bg-accent/90 border-transparent';
+  if (searchTerm) {
+    query = query.or(`client_name.ilike.%${searchTerm}%,client_code.ilike.%${searchTerm}%`);
   }
+
+  if (departmentFilter !== "all") {
+    query = query.eq("department", departmentFilter);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw new Error(error.message);
+  return data || [];
 };
 
-export const PosClientsTable = () => {
+export const POSClientsTable = ({ searchTerm, departmentFilter }: { searchTerm: string; departmentFilter: string }) => {
   const { session } = useSession();
   const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [departmentFilter, setDepartmentFilter] = useState("all");
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
 
   const {
-    data: posClients,
-    isLoading: isLoadingPosClients,
-    isError: isErrorPosClients,
-    error: errorPosClients,
+    data: clients,
+    isLoading,
+    isError,
+    error,
   } = useQuery({
-    queryKey: ["posClients"],
-    queryFn: fetchPosClients,
+    queryKey: ["posClients", searchTerm, departmentFilter],
+    queryFn: () => fetchPOSClients(searchTerm, departmentFilter),
     enabled: !!session?.user?.id,
   });
 
-  const processedPosClients = useMemo(() => {
-    if (!posClients) return [];
+  const processedClients = useMemo(() => {
+    if (!clients) return [];
     
-    let filtered = posClients.filter(client => {
-      const matchesDepartment = departmentFilter === 'all' || client.department === departmentFilter;
-      
-      const matchesSearch = searchTerm.trim() === '' ||
-        client.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.client_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (client.department && client.department.toLowerCase().includes(searchTerm.toLowerCase()));
-        
-      return matchesDepartment && matchesSearch;
-    });
+    let filtered = [...clients];
 
     if (sortConfig !== null) {
       filtered.sort((a, b) => {
@@ -134,9 +107,9 @@ export const PosClientsTable = () => {
     }
 
     return filtered;
-  }, [posClients, searchTerm, departmentFilter, sortConfig]);
+  }, [clients, sortConfig]);
 
-  const requestSort = (key: SortablePosClientKeys) => {
+  const requestSort = (key: SortableClientKeys) => {
     let direction: SortDirection = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';
@@ -144,14 +117,18 @@ export const PosClientsTable = () => {
     setSortConfig({ key, direction });
   };
 
-  const getSortIcon = (key: SortablePosClientKeys) => {
+  const getSortIcon = (key: SortableClientKeys) => {
     if (!sortConfig || sortConfig.key !== key) {
       return null;
     }
-    return sortConfig.direction === 'asc' ? <span className="ml-2 h-4 w-4">↑</span> : <span className="ml-2 h-4 w-4">↓</span>;
+    return sortConfig.direction === 'asc' ? (
+      <ArrowUp className="ml-1 h-4 w-4" />
+    ) : (
+      <ArrowDown className="ml-1 h-4 w-4" />
+    );
   };
 
-  if (isLoadingPosClients) {
+  if (isLoading) {
     return (
       <div className="space-y-2">
         <Skeleton className="h-12 w-full" />
@@ -161,32 +138,12 @@ export const PosClientsTable = () => {
     );
   }
 
-  if (isErrorPosClients) {
-    return <div className="text-red-500">حدث خطأ في جلب البيانات: {errorPosClients.message}</div>;
+  if (isError) {
+    return <div className="text-red-500">حدث خطأ في جلب البيانات: {error.message}</div>;
   }
 
   return (
     <div dir="rtl">
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-4">
-        <Input
-          placeholder="ابحث باسم العميل أو الكود أو القسم..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full sm:max-w-sm"
-        />
-        <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="فلترة حسب القسم" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">كل الأقسام</SelectItem>
-            <SelectItem value="تجزئة">تجزئة</SelectItem>
-            <SelectItem value="خدمات">خدمات</SelectItem>
-            <SelectItem value="صناعة">صناعة</SelectItem>
-            <SelectItem value="حكومي">حكومي</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
       <div className="border rounded-lg overflow-x-auto">
         <Table>
           <TableCaption>قائمة بعملاء نقاط البيع.</TableCaption>
@@ -207,20 +164,20 @@ export const PosClientsTable = () => {
                   القسم {getSortIcon('department')}
                 </Button>
               </TableHead>
+              <TableHead className="text-right">تاريخ الإضافة</TableHead>
               <TableHead className="text-right">الإجراءات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {processedPosClients && processedPosClients.length > 0 ? (
-              processedPosClients.map((client) => (
+            {processedClients && processedClients.length > 0 ? (
+              processedClients.map((client) => (
                 <TableRow key={client.id}>
                   <TableCell className="font-medium">{client.client_code}</TableCell>
                   <TableCell>{client.client_name}</TableCell>
                   <TableCell>
-                    <Badge className={getStatusBadgeClass(client.department)}>
-                      {client.department || "غير محدد"}
-                    </Badge>
+                    <Badge variant="secondary">{client.department || "غير محدد"}</Badge>
                   </TableCell>
+                  <TableCell>{new Date(client.created_at).toLocaleDateString('ar-SA')}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -250,19 +207,19 @@ export const PosClientsTable = () => {
                           </DropdownMenuItem>
                         </PosClientNotesDialog>
                         <DropdownMenuSeparator />
-                        <EditPosClientDialog posClient={client}>
+                        <EditPOSClientDialog client={client}>
                           <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                             <Edit className="ml-2 h-4 w-4" />
                             <span>تعديل</span>
                           </DropdownMenuItem>
-                        </EditPosClientDialog>
+                        </EditPOSClientDialog>
                         <DropdownMenuSeparator />
-                        <DeletePosClientAlert posClientId={client.id}>
+                        <DeletePOSClientAlert clientId={client.id}>
                           <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600 focus:text-red-600">
                             <Trash2 className="ml-2 h-4 w-4" />
                             <span>حذف</span>
                           </DropdownMenuItem>
-                        </DeletePosClientAlert>
+                        </DeletePOSClientAlert>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -270,8 +227,8 @@ export const PosClientsTable = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
-                  {posClients && posClients.length > 0 ? "لم يتم العثور على عملاء يطابقون بحثك." : "لا يوجد عملاء حتى الآن. قم بإضافة عميل جديد للبدء."}
+                <TableCell colSpan={5} className="h-24 text-center">
+                  {clients && clients.length > 0 ? "لم يتم العثور على عملاء يطابقون بحثك." : "لا يوجد عملاء حتى الآن. قم بإضافة عميل جديد للبدء."}
                 </TableCell>
               </TableRow>
             )}

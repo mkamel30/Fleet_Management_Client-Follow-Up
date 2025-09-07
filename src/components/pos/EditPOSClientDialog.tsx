@@ -32,7 +32,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { PosClient } from "@/types/pos";
+import { POSClient } from "@/types/pos";
 
 const posClientSchema = z.object({
   client_code: z.string().min(1, { message: "الكود مطلوب" }),
@@ -40,31 +40,31 @@ const posClientSchema = z.object({
   department: z.string().optional(),
 });
 
-type PosClientFormValues = z.infer<typeof posClientSchema>;
+type POSClientFormValues = z.infer<typeof posClientSchema>;
 
-interface EditPosClientDialogProps {
-  posClient: PosClient;
+interface EditPOSClientDialogProps {
+  client: POSClient;
   children: React.ReactNode;
 }
 
-export const EditPosClientDialog = ({ posClient, children }: EditPosClientDialogProps) => {
+export const EditPOSClientDialog = ({ client, children }: EditPOSClientDialogProps) => {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const form = useForm<PosClientFormValues>({
+  const form = useForm<POSClientFormValues>({
     resolver: zodResolver(posClientSchema),
     defaultValues: {
-      client_code: posClient.client_code,
-      client_name: posClient.client_name,
-      department: posClient.department || "",
+      client_code: client.client_code,
+      client_name: client.client_name,
+      department: client.department || "",
     },
   });
 
-  const onSubmit = async (values: PosClientFormValues) => {
+  const onSubmit = async (values: POSClientFormValues) => {
     const { error } = await supabase
       .from("pos_clients")
       .update(values)
-      .eq("id", posClient.id);
+      .eq("id", client.id);
 
     if (error) {
       showError("حدث خطأ أثناء تحديث العميل: " + error.message);

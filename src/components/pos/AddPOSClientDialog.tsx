@@ -41,14 +41,14 @@ const posClientSchema = z.object({
   department: z.string().optional(),
 });
 
-type PosClientFormValues = z.infer<typeof posClientSchema>;
+type POSClientFormValues = z.infer<typeof posClientSchema>;
 
-export const AddPosClientDialog = () => {
+export const AddPOSClientDialog = () => {
   const [open, setOpen] = useState(false);
   const { session } = useSession();
   const queryClient = useQueryClient();
 
-  const form = useForm<PosClientFormValues>({
+  const form = useForm<POSClientFormValues>({
     resolver: zodResolver(posClientSchema),
     defaultValues: {
       client_code: "",
@@ -57,7 +57,7 @@ export const AddPosClientDialog = () => {
     },
   });
 
-  const onSubmit = async (values: PosClientFormValues) => {
+  const onSubmit = async (values: POSClientFormValues) => {
     if (!session?.user) {
       showError("يجب عليك تسجيل الدخول أولاً");
       return;

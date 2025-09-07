@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { AddClientDialog } from '@/components/clients/AddClientDialog';
 import { ClientsTable } from '@/components/clients/ClientsTable';
-import { Settings, User, LogOut, FileText } from 'lucide-react';
+import { Settings, User, LogOut, FileText, CreditCard } from 'lucide-react'; // Added CreditCard icon
 import { UpcomingFollowUps } from '@/components/notifications/UpcomingFollowUps';
 import {
   DropdownMenu,
@@ -33,6 +33,12 @@ const Index = () => {
             <Link to="/reports">
               <FileText className="ml-2 h-4 w-4" />
               التقارير
+            </Link>
+          </Button>
+          <Button asChild variant="outline"> {/* New button for POS Payments */}
+            <Link to="/pos">
+              <CreditCard className="ml-2 h-4 w-4" />
+              نقاط البيع
             </Link>
           </Button>
           <AddClientDialog />

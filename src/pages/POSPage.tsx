@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/SessionContext";
 import { Button } from "@/components/ui/button";
@@ -11,16 +11,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, FileText, Upload, PlusCircle } from "lucide-react";
+import { ArrowRight, FileText, Upload } from "lucide-react";
 import { Link } from "react-router-dom";
 import { POSClientsTable } from "@/components/pos/POSClientsTable";
 import { POSUploadDialog } from "@/components/pos/POSUploadDialog";
+import { AddPOSClientDialog } from "@/components/pos/AddPOSClientDialog";
 
 const POSPage = () => {
   const { session } = useSession();
-  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
 
@@ -60,6 +59,7 @@ const POSPage = () => {
               التقارير
             </Link>
           </Button>
+          <AddPOSClientDialog />
           <Button asChild>
             <Link to="/">
               <ArrowRight className="ml-2 h-4 w-4" />

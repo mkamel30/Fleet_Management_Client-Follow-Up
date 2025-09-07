@@ -14,16 +14,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { useQueryClient } from "@tanstack/react-query";
 
-interface DeletePosClientAlertProps {
-  posClientId: string;
+interface DeletePOSClientAlertProps {
+  clientId: string;
   children: React.ReactNode;
 }
 
-export function DeletePosClientAlert({ posClientId, children }: DeletePosClientAlertProps) {
+export function DeletePOSClientAlert({ clientId, children }: DeletePOSClientAlertProps) {
   const queryClient = useQueryClient();
 
   const handleDelete = async () => {
-    const { error } = await supabase.from("pos_clients").delete().eq("id", posClientId);
+    const { error } = await supabase.from("pos_clients").delete().eq("id", clientId);
 
     if (error) {
       showError("حدث خطأ أثناء حذف العميل: " + error.message);

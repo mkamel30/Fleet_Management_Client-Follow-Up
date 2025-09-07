@@ -11,13 +11,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Form,
   FormControl,
   FormField,
@@ -33,7 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/SessionContext";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { PosClient } from "@/types/pos";
+import { POSClient } from "@/types/pos";
 import { DateInputPicker } from "@/components/ui/DateInputPicker";
 
 const callLogSchema = z.object({
@@ -44,7 +37,7 @@ const callLogSchema = z.object({
 type CallLogFormValues = z.infer<typeof callLogSchema>;
 
 interface AddCallLogDialogProps {
-  posClient: PosClient;
+  posClient: POSClient;
   children: React.ReactNode;
 }
 

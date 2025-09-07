@@ -8,19 +8,19 @@ import {
 } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { PosClient } from "@/types/pos";
-import { PosCallLog } from "@/types/pos";
+import { POSClient } from "@/types/pos";
+import { POSCallLog } from "@/types/pos";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { arSA } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 
 interface CallLogHistoryDialogProps {
-  posClient: PosClient;
+  posClient: POSClient;
   children: React.ReactNode;
 }
 
-const fetchCallLogs = async (posClientId: string): Promise<PosCallLog[]> => {
+const fetchCallLogs = async (posClientId: string): Promise<POSCallLog[]> => {
     const { data, error } = await supabase
         .from('pos_call_logs')
         .select('*')
@@ -31,7 +31,7 @@ const fetchCallLogs = async (posClientId: string): Promise<PosCallLog[]> => {
         console.error("Error fetching call log history:", error);
         throw new Error(error.message);
     }
-    return (data as PosCallLog[]) || [];
+    return (data as POSCallLog[]) || [];
 }
 
 export const CallLogHistoryDialog = ({ posClient, children }: CallLogHistoryDialogProps) => {
