@@ -76,9 +76,9 @@ export const POSUploadDialog = ({ children }: POSUploadDialogProps) => {
         const { data: insertedClients, error: insertError } = await supabase
           .from('pos_clients')
           .insert(clientsToInsert)
-          .select('id, client_code')
-          .onConflict('client_code')
-          .ignore(); // Ignore rows that cause a conflict on client_code
+          .onConflict('client_code') // onConflict should be before select()
+          .ignore() // Ignore rows that cause a conflict on client_code
+          .select('id, client_code');
 
         if (insertError) {
           throw new Error(insertError.message);

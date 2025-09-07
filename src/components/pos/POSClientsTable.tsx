@@ -36,7 +36,7 @@ import { EditPOSClientDialog } from "./EditPOSClientDialog";
 import { DeletePOSClientAlert } from "./DeletePOSClientAlert";
 import { AddCallLogDialog } from "./AddCallLogDialog";
 import { CallLogHistoryDialog } from "./CallLogHistoryDialog";
-import { PosClientNotesDialog } from "./PosClientNotesDialog"; // This component will be created next
+import { PosClientNotesDialog } from "./PosClientNotesDialog";
 import { showError, showSuccess } from "@/utils/toast";
 
 type SortDirection = 'asc' | 'desc';
