@@ -13,13 +13,16 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { useQueryClient } from "@tanstack/react-query";
+import React from "react"; // Import React for ReactNode
 
 interface DeletePOSClientAlertProps {
   clientId: string;
-  children: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirmDelete: () => void; // New prop for the actual delete logic
 }
 
-export function DeletePOSClientAlert({ clientId, children }: DeletePOSClientAlertProps) {
+export function DeletePOSClientAlert({ clientId, open, onOpenChange, onConfirmDelete }: DeletePOSClientAlertProps) {
   const queryClient = useQueryClient();
 
   const handleDelete = async () => {
@@ -30,12 +33,12 @@ export function DeletePOSClientAlert({ clientId, children }: DeletePOSClientAler
     } else {
       showSuccess("تم حذف العميل بنجاح.");
       queryClient.invalidateQueries({ queryKey: ["posClients"] });
+      onConfirmDelete(); // Call the passed callback
     }
   };
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent dir="rtl">
         <AlertDialogHeader>
           <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>
