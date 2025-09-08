@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import {
   Dialog,
   DialogContent,
@@ -85,8 +85,10 @@ export const AddPOSClientDialog = () => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
-          <PlusCircle className="ml-2 h-4 w-4" />
-          إضافة عميل جديد
+          <Fragment>
+            <PlusCircle className="ml-2 h-4 w-4" />
+            إضافة عميل جديد
+          </Fragment>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto" dir="rtl">

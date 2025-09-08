@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/SessionContext";
@@ -50,8 +50,10 @@ const POSPage = () => {
         <div className="flex items-center gap-2">
           <POSUploadDialog>
             <Button variant="outline">
-              <Upload className="ml-2 h-4 w-4" />
-              رفع من Excel
+              <Fragment>
+                <Upload className="ml-2 h-4 w-4" />
+                رفع من Excel
+              </Fragment>
             </Button>
           </POSUploadDialog>
           <Button asChild variant="outline">
