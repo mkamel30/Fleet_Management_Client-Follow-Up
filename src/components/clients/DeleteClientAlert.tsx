@@ -7,19 +7,19 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface DeleteClientAlertProps {
   clientId: string;
-  children: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirmDelete: () => void;
 }
 
-export function DeleteClientAlert({ clientId, children }: DeleteClientAlertProps) {
+export function DeleteClientAlert({ clientId, open, onOpenChange, onConfirmDelete }: DeleteClientAlertProps) {
   const queryClient = useQueryClient();
 
   const handleDelete = async () => {
@@ -30,12 +30,12 @@ export function DeleteClientAlert({ clientId, children }: DeleteClientAlertProps
     } else {
       showSuccess("تم حذف العميل بنجاح.");
       queryClient.invalidateQueries({ queryKey: ["clients"] });
+      onConfirmDelete();
     }
   };
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent dir="rtl">
         <AlertDialogHeader>
           <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>

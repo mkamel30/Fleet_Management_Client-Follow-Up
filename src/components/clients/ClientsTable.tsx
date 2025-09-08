@@ -25,7 +25,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -100,6 +99,17 @@ export const ClientsTable = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+
+  // State for managing dialogs
+  const [isAddFollowUpDialogOpen, setIsAddFollowUpDialogOpen] = useState(false);
+  const [isFollowUpHistoryDialogOpen, setIsFollowUpHistoryDialogOpen] = useState(false);
+  const [isClientNotesDialogOpen, setIsClientNotesDialogOpen] = useState(false);
+  const [isEditClientDialogOpen, setIsEditClientDialogOpen] = useState(false);
+  const [isDeleteClientAlertOpen, setIsDeleteClientAlertOpen] = useState(false);
+  const [isEmailAlertDialogOpen, setIsEmailAlertDialogOpen] = useState(false);
+  const [isWhatsAppAlertDialogOpen, setIsWhatsAppAlertDialogOpen] = useState(false);
+
+  const [selectedClientForAction, setSelectedClientForAction] = useState<Client | null>(null);
 
   const {
     data: clients,
@@ -245,6 +255,7 @@ export const ClientsTable = () => {
     
     await logActionAsFollowUp(client, 'email');
     window.open(mailtoLink, '_self');
+    setIsEmailAlertDialogOpen(false); // Close alert after action
   };
 
   const createWhatsAppLink = (client: Client, template: MessageTemplate | undefined) => {
@@ -275,6 +286,7 @@ export const ClientsTable = () => {
     const link = createWhatsAppLink(client, whatsappTemplate);
     await logActionAsFollowUp(client, 'whatsapp');
     window.open(link, '_blank', 'noopener,noreferrer');
+    setIsWhatsAppAlertDialogOpen(false); // Close alert after action
   };
 
   if (isLoadingClients || isLoadingTemplates) {
@@ -380,100 +392,61 @@ export const ClientsTable = () => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                        <AddFollowUpDialog client={client}>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <span className="flex items-center">
-                                    <PlusCircle className="ml-2 h-4 w-4" />
-                                    <span>إضافة متابعة</span>
-                                </span>
-                            </DropdownMenuItem>
-                        </AddFollowUpDialog>
-                        <FollowUpHistoryDialog client={client}>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <span className="flex items-center">
-                                    <History className="ml-2 h-4 w-4" />
-                                    <span>عرض السجل</span>
-                                </span>
-                            </DropdownMenuItem>
-                        </FollowUpHistoryDialog>
-                        <ClientNotesDialog client={client}>
-                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setSelectedClientForAction(client); setIsAddFollowUpDialogOpen(true); }}>
                             <span className="flex items-center">
+                                <PlusCircle className="ml-2 h-4 w-4" />
+                                <span>إضافة متابعة</span>
+                            </span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setSelectedClientForAction(client); setIsFollowUpHistoryDialogOpen(true); }}>
+                            <span className="flex items-center">
+                                <History className="ml-2 h-4 w-4" />
+                                <span>عرض السجل</span>
+                            </span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setSelectedClientForAction(client); setIsClientNotesDialogOpen(true); }}>
+                          <span className="flex items-center">
                                 <StickyNote className="ml-2 h-4 w-4" />
                                 <span>الملاحظات</span>
                             </span>
-                          </DropdownMenuItem>
-                        </ClientNotesDialog>
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <EditClientDialog client={client}>
-                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                            <span className="flex items-center">
+                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setSelectedClientForAction(client); setIsEditClientDialogOpen(true); }}>
+                          <span className="flex items-center">
                                 <Edit className="ml-2 h-4 w-4" />
                                 <span>تعديل</span>
                             </span>
-                          </DropdownMenuItem>
-                        </EditClientDialog>
+                        </DropdownMenuItem>
                         {client.email && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <span className="flex items-center">
-                                    <Mail className="ml-2 h-4 w-4" />
-                                    <span>إرسال بريد إلكتروني</span>
-                                </span>
-                              </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent dir="rtl">
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>تأكيد إرسال البريد الإلكتروني</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  سيتم فتح برنامج البريد الإلكتروني الخاص بك. تم نسخ محتوى الرسالة إلى الحافظة، كل ما عليك هو لصقه في جسم الرسالة.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleEmailClick(client)}>
-                                  متابعة
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                          <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setSelectedClientForAction(client); setIsEmailAlertDialogOpen(true); }}>
+                            <span className="flex items-center">
+                                <Mail className="ml-2 h-4 w-4" />
+                                <span>إرسال بريد إلكتروني</span>
+                            </span>
+                          </DropdownMenuItem>
                         )}
                         {client.phone && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <span className="flex items-center">
-                                    <MessageSquare className="ml-2 h-4 w-4" />
-                                    <span>إرسال واتساب</span>
-                                </span>
-                              </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent dir="rtl">
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>تأكيد إرسال رسالة واتساب</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  هل أنت متأكد أنك تريد فتح واتساب لإرسال رسالة إلى هذا العميل؟
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleWhatsAppClick(client)}>
-                                  متابعة
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                          <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setSelectedClientForAction(client); setIsWhatsAppAlertDialogOpen(true); }}>
+                            <span className="flex items-center">
+                                <MessageSquare className="ml-2 h-4 w-4" />
+                                <span>إرسال واتساب</span>
+                            </span>
+                          </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator />
-                        <DeleteClientAlert clientId={client.id}>
-                          <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600 focus:text-red-600">
-                            <span className="flex items-center">
+                        <DropdownMenuItem 
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            setSelectedClientForAction(client);
+                            setIsDeleteClientAlertOpen(true);
+                          }}
+                          className="text-red-600 focus:text-red-600"
+                        >
+                          <span className="flex items-center">
                                 <Trash2 className="ml-2 h-4 w-4" />
                                 <span>حذف</span>
                             </span>
-                          </DropdownMenuItem>
-                        </DeleteClientAlert>
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -489,6 +462,72 @@ export const ClientsTable = () => {
           </TableBody>
         </Table>
       </div>
+
+      {selectedClientForAction && (
+        <>
+          <AddFollowUpDialog 
+            client={selectedClientForAction} 
+            open={isAddFollowUpDialogOpen} 
+            onOpenChange={setIsAddFollowUpDialogOpen} 
+          />
+          <FollowUpHistoryDialog 
+            client={selectedClientForAction} 
+            open={isFollowUpHistoryDialogOpen} 
+            onOpenChange={setIsFollowUpHistoryDialogOpen} 
+          />
+          <ClientNotesDialog 
+            client={selectedClientForAction} 
+            open={isClientNotesDialogOpen} 
+            onOpenChange={setIsClientNotesDialogOpen} 
+          />
+          <EditClientDialog 
+            client={selectedClientForAction} 
+            open={isEditClientDialogOpen} 
+            onOpenChange={setIsEditClientDialogOpen} 
+          />
+          <DeleteClientAlert 
+            clientId={selectedClientForAction.id} 
+            open={isDeleteClientAlertOpen} 
+            onOpenChange={setIsDeleteClientAlertOpen}
+            onConfirmDelete={() => {
+                setIsDeleteClientAlertOpen(false);
+                setSelectedClientForAction(null);
+            }}
+          />
+          <AlertDialog open={isEmailAlertDialogOpen} onOpenChange={setIsEmailAlertDialogOpen}>
+            <AlertDialogContent dir="rtl">
+              <AlertDialogHeader>
+                <AlertDialogTitle>تأكيد إرسال البريد الإلكتروني</AlertDialogTitle>
+                <AlertDialogDescription>
+                  سيتم فتح برنامج البريد الإلكتروني الخاص بك. تم نسخ محتوى الرسالة إلى الحافظة، كل ما عليك هو لصقه في جسم الرسالة.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                <AlertDialogAction onClick={() => handleEmailClick(selectedClientForAction)}>
+                  متابعة
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <AlertDialog open={isWhatsAppAlertDialogOpen} onOpenChange={setIsWhatsAppAlertDialogOpen}>
+            <AlertDialogContent dir="rtl">
+              <AlertDialogHeader>
+                <AlertDialogTitle>تأكيد إرسال رسالة واتساب</AlertDialogTitle>
+                <AlertDialogDescription>
+                  هل أنت متأكد أنك تريد فتح واتساب لإرسال رسالة إلى هذا العميل؟
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                <AlertDialogAction onClick={() => handleWhatsAppClick(selectedClientForAction)}>
+                  متابعة
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      )}
     </div>
   );
 };

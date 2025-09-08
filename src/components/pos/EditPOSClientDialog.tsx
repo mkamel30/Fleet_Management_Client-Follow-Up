@@ -5,7 +5,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
@@ -44,11 +43,11 @@ type POSClientFormValues = z.infer<typeof posClientSchema>;
 
 interface EditPOSClientDialogProps {
   client: PosClient; // Changed to PosClient
-  children: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export const EditPOSClientDialog = ({ client, children }: EditPOSClientDialogProps) => {
-  const [open, setOpen] = useState(false);
+export const EditPOSClientDialog = ({ client, open, onOpenChange }: EditPOSClientDialogProps) => {
   const queryClient = useQueryClient();
 
   const form = useForm<POSClientFormValues>({
@@ -71,13 +70,12 @@ export const EditPOSClientDialog = ({ client, children }: EditPOSClientDialogPro
     } else {
       showSuccess("تم تحديث بيانات العميل بنجاح!");
       queryClient.invalidateQueries({ queryKey: ["posClients"] });
-      setOpen(false);
+      onOpenChange(false); // Close dialog
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle>تعديل بيانات العميل</DialogTitle>

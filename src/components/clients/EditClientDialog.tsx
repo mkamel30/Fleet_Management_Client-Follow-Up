@@ -5,7 +5,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
@@ -48,11 +47,11 @@ type ClientFormValues = z.infer<typeof clientSchema>;
 
 interface EditClientDialogProps {
   client: Client;
-  children: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export const EditClientDialog = ({ client, children }: EditClientDialogProps) => {
-  const [open, setOpen] = useState(false);
+export const EditClientDialog = ({ client, open, onOpenChange }: EditClientDialogProps) => {
   const queryClient = useQueryClient();
 
   const form = useForm<ClientFormValues>({
@@ -79,13 +78,12 @@ export const EditClientDialog = ({ client, children }: EditClientDialogProps) =>
     } else {
       showSuccess("تم تحديث بيانات العميل بنجاح!");
       queryClient.invalidateQueries({ queryKey: ["clients"] });
-      setOpen(false);
+      onOpenChange(false); // Close dialog
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle>تعديل بيانات العميل</DialogTitle>

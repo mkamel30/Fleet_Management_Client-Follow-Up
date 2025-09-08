@@ -5,7 +5,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
@@ -26,7 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/SessionContext";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { POSClient } from "@/types/pos";
+import { PosClient } from "@/types/pos"; // Changed to PosClient
 import { DateInputPicker } from "@/components/ui/DateInputPicker";
 
 const callLogSchema = z.object({
@@ -37,12 +36,12 @@ const callLogSchema = z.object({
 type CallLogFormValues = z.infer<typeof callLogSchema>;
 
 interface AddCallLogDialogProps {
-  posClient: POSClient;
-  children: React.ReactNode;
+  posClient: PosClient; // Changed to PosClient
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export const AddCallLogDialog = ({ posClient, children }: AddCallLogDialogProps) => {
-  const [open, setOpen] = useState(false);
+export const AddCallLogDialog = ({ posClient, open, onOpenChange }: AddCallLogDialogProps) => {
   const { session } = useSession();
   const queryClient = useQueryClient();
 
@@ -75,13 +74,12 @@ export const AddCallLogDialog = ({ posClient, children }: AddCallLogDialogProps)
       
       toast.success("تم تسجيل المكالمة بنجاح!");
       form.reset();
-      setOpen(false);
+      onOpenChange(false); // Close dialog
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle>إضافة مكالمة للعميل: {posClient.client_name}</DialogTitle>

@@ -4,23 +4,22 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { POSClient } from "@/types/pos";
-import { POSCallLog } from "@/types/pos";
+import { PosClient, PosCallLog } from "@/types/pos"; // Changed to PosClient, PosCallLog
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { arSA } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 
 interface CallLogHistoryDialogProps {
-  posClient: POSClient;
-  children: React.ReactNode;
+  posClient: PosClient; // Changed to PosClient
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-const fetchCallLogs = async (posClientId: string): Promise<POSCallLog[]> => {
+const fetchCallLogs = async (posClientId: string): Promise<PosCallLog[]> => { // Changed to PosCallLog
     const { data, error } = await supabase
         .from('pos_call_logs')
         .select('*')
@@ -31,19 +30,18 @@ const fetchCallLogs = async (posClientId: string): Promise<POSCallLog[]> => {
         console.error("Error fetching call log history:", error);
         throw new Error(error.message);
     }
-    return (data as POSCallLog[]) || [];
+    return (data as PosCallLog[]) || [];
 }
 
-export const CallLogHistoryDialog = ({ posClient, children }: CallLogHistoryDialogProps) => {
+export const CallLogHistoryDialog = ({ posClient, open, onOpenChange }: CallLogHistoryDialogProps) => {
   const { data: callLogs, isLoading } = useQuery({
     queryKey: ["posCallLogs", posClient.id],
     queryFn: () => fetchCallLogs(posClient.id),
-    enabled: !!posClient.id,
+    enabled: !!posClient.id && open, // Only fetch when dialog is open
   });
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col" dir="rtl">
         <DialogHeader>
           <DialogTitle>سجل المكالمات للعميل: {posClient.client_name}</DialogTitle>

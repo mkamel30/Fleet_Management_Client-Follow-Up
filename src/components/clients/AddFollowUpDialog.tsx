@@ -5,7 +5,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
@@ -47,7 +46,8 @@ type FollowUpFormValues = z.infer<typeof followUpSchema>;
 
 interface AddFollowUpDialogProps {
   client: Client;
-  children: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 const generateOutlookLink = (client: Client, values: FollowUpFormValues) => {
@@ -78,8 +78,7 @@ const generateOutlookLink = (client: Client, values: FollowUpFormValues) => {
     return url.toString();
 }
 
-export const AddFollowUpDialog = ({ client, children }: AddFollowUpDialogProps) => {
-  const [open, setOpen] = useState(false);
+export const AddFollowUpDialog = ({ client, open, onOpenChange }: AddFollowUpDialogProps) => {
   const { session } = useSession();
   const queryClient = useQueryClient();
 
@@ -130,13 +129,12 @@ export const AddFollowUpDialog = ({ client, children }: AddFollowUpDialogProps) 
       }
       
       form.reset();
-      setOpen(false);
+      onOpenChange(false); // Close dialog
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle>إضافة متابعة للعميل: {client.company_name}</DialogTitle>

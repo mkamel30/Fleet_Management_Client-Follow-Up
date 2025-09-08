@@ -5,7 +5,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,7 +20,8 @@ import { showError, showSuccess } from "@/utils/toast";
 
 interface PosClientNotesDialogProps {
   posClient: PosClient; // Changed to PosClient
-  children: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 const fetchNotes = async (posClientId: string): Promise<ClientNote[]> => {
@@ -38,7 +38,7 @@ const fetchNotes = async (posClientId: string): Promise<ClientNote[]> => {
   return data || [];
 };
 
-export const PosClientNotesDialog = ({ posClient, children }: PosClientNotesDialogProps) => {
+export const PosClientNotesDialog = ({ posClient, open, onOpenChange }: PosClientNotesDialogProps) => {
   const { session } = useSession();
   const queryClient = useQueryClient();
   const [newNote, setNewNote] = useState("");
@@ -46,7 +46,7 @@ export const PosClientNotesDialog = ({ posClient, children }: PosClientNotesDial
   const { data: notes, isLoading } = useQuery({
     queryKey: ["posClientNotes", posClient.id],
     queryFn: () => fetchNotes(posClient.id),
-    enabled: !!posClient.id,
+    enabled: !!posClient.id && open, // Only fetch when dialog is open
   });
 
   const addNoteMutation = useMutation({
@@ -76,8 +76,7 @@ export const PosClientNotesDialog = ({ posClient, children }: PosClientNotesDial
   };
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col" dir="rtl">
         <DialogHeader>
           <DialogTitle>ملاحظات على عميل نقاط البيع: {posClient.client_name}</DialogTitle>

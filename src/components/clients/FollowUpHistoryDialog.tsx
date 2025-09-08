@@ -4,7 +4,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,7 +16,8 @@ import { Badge } from "@/components/ui/badge";
 
 interface FollowUpHistoryDialogProps {
   client: Client;
-  children: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 const fetchFollowUps = async (clientId: string): Promise<FollowUp[]> => {
@@ -34,16 +34,15 @@ const fetchFollowUps = async (clientId: string): Promise<FollowUp[]> => {
     return (data as FollowUp[]) || [];
 }
 
-export const FollowUpHistoryDialog = ({ client, children }: FollowUpHistoryDialogProps) => {
+export const FollowUpHistoryDialog = ({ client, open, onOpenChange }: FollowUpHistoryDialogProps) => {
   const { data: followUps, isLoading } = useQuery({
     queryKey: ["followUps", client.id],
     queryFn: () => fetchFollowUps(client.id),
-    enabled: !!client.id,
+    enabled: !!client.id && open, // Only fetch when dialog is open
   });
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col" dir="rtl">
         <DialogHeader>
           <DialogTitle>سجل المتابعة للعميل: {client.company_name}</DialogTitle>

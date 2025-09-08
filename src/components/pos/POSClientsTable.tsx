@@ -72,8 +72,13 @@ export const POSClientsTable = ({ searchTerm, departmentFilter }: { searchTerm: 
   const queryClient = useQueryClient();
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
 
-  // State for managing delete alert
+  // State for managing dialogs
+  const [isAddCallLogDialogOpen, setIsAddCallLogDialogOpen] = useState(false);
+  const [isCallLogHistoryDialogOpen, setIsCallLogHistoryDialogOpen] = useState(false);
+  const [isPosClientNotesDialogOpen, setIsPosClientNotesDialogOpen] = useState(false);
+  const [isEditPOSClientDialogOpen, setIsEditPOSClientDialogOpen] = useState(false);
   const [isDeletePOSClientAlertOpen, setIsDeletePOSClientAlertOpen] = useState(false);
+
   const [selectedPOSClientForAction, setSelectedPOSClientForAction] = useState<PosClient | null>(null); // Changed to PosClient
 
   const {
@@ -134,6 +139,7 @@ export const POSClientsTable = ({ searchTerm, departmentFilter }: { searchTerm: 
 
   const handleConfirmDeletePOSClient = () => {
     setIsDeletePOSClientAlertOpen(false); // Close alert after delete action
+    setSelectedPOSClientForAction(null); // Clear selected client
   };
 
   if (isLoading) {
@@ -196,39 +202,31 @@ export const POSClientsTable = ({ searchTerm, departmentFilter }: { searchTerm: 
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                        <AddCallLogDialog posClient={client}>
-                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                            <span className="flex items-center">
+                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setSelectedPOSClientForAction(client); setIsAddCallLogDialogOpen(true); }}>
+                          <span className="flex items-center">
                                 <Phone className="ml-2 h-4 w-4" />
                                 <span>إضافة مكالمة</span>
                             </span>
-                          </DropdownMenuItem>
-                        </AddCallLogDialog>
-                        <CallLogHistoryDialog posClient={client}>
-                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                            <span className="flex items-center">
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setSelectedPOSClientForAction(client); setIsCallLogHistoryDialogOpen(true); }}>
+                          <span className="flex items-center">
                                 <History className="ml-2 h-4 w-4" />
                                 <span>سجل المكالمات</span>
                             </span>
-                          </DropdownMenuItem>
-                        </CallLogHistoryDialog>
-                        <PosClientNotesDialog posClient={client}>
-                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                            <span className="flex items-center">
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setSelectedPOSClientForAction(client); setIsPosClientNotesDialogOpen(true); }}>
+                          <span className="flex items-center">
                                 <StickyNote className="ml-2 h-4 w-4" />
                                 <span>الملاحظات</span>
                             </span>
-                          </DropdownMenuItem>
-                        </PosClientNotesDialog>
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <EditPOSClientDialog client={client}>
-                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                            <span className="flex items-center">
+                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setSelectedPOSClientForAction(client); setIsEditPOSClientDialogOpen(true); }}>
+                          <span className="flex items-center">
                                 <Edit className="ml-2 h-4 w-4" />
                                 <span>تعديل</span>
                             </span>
-                          </DropdownMenuItem>
-                        </EditPOSClientDialog>
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 
                           onSelect={(e) => {
@@ -259,14 +257,36 @@ export const POSClientsTable = ({ searchTerm, departmentFilter }: { searchTerm: 
         </Table>
       </div>
 
-      {/* Delete POS Client Alert Dialog */}
+      {/* Render all controlled dialogs outside the table */}
       {selectedPOSClientForAction && (
-        <DeletePOSClientAlert 
-          clientId={selectedPOSClientForAction.id} 
-          open={isDeletePOSClientAlertOpen} 
-          onOpenChange={setIsDeletePOSClientAlertOpen}
-          onConfirmDelete={handleConfirmDeletePOSClient}
-        />
+        <>
+          <AddCallLogDialog 
+            posClient={selectedPOSClientForAction} 
+            open={isAddCallLogDialogOpen} 
+            onOpenChange={setIsAddCallLogDialogOpen} 
+          />
+          <CallLogHistoryDialog 
+            posClient={selectedPOSClientForAction} 
+            open={isCallLogHistoryDialogOpen} 
+            onOpenChange={setIsCallLogHistoryDialogOpen} 
+          />
+          <PosClientNotesDialog 
+            posClient={selectedPOSClientForAction} 
+            open={isPosClientNotesDialogOpen} 
+            onOpenChange={setIsPosClientNotesDialogOpen} 
+          />
+          <EditPOSClientDialog 
+            client={selectedPOSClientForAction} 
+            open={isEditPOSClientDialogOpen} 
+            onOpenChange={setIsEditPOSClientDialogOpen} 
+          />
+          <DeletePOSClientAlert 
+            clientId={selectedPOSClientForAction.id} 
+            open={isDeletePOSClientAlertOpen} 
+            onOpenChange={setIsDeletePOSClientAlertOpen}
+            onConfirmDelete={handleConfirmDeletePOSClient}
+          />
+        </>
       )}
     </div>
   );
