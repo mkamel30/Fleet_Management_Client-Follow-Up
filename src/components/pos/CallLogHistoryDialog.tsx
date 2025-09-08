@@ -7,19 +7,19 @@ import {
 } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { PosClient, PosCallLog } from "@/types/pos"; // Changed to PosClient, PosCallLog
+import { PosClient, PosCallLog } from "@/types/pos";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { arSA } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 
 interface CallLogHistoryDialogProps {
-  posClient: PosClient; // Changed to PosClient
+  posClient: PosClient;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const fetchCallLogs = async (posClientId: string): Promise<PosCallLog[]> => { // Changed to PosCallLog
+const fetchCallLogs = async (posClientId: string): Promise<PosCallLog[]> => {
     const { data, error } = await supabase
         .from('pos_call_logs')
         .select('*')
