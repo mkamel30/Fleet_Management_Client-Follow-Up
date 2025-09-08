@@ -196,8 +196,10 @@ export const POSClientsTable = ({ searchTerm, departmentFilter }: { searchTerm: 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">فتح القائمة</span>
-                          <MoreHorizontal className="h-4 w-4" />
+                          <span> {/* Wrapped children in a span */}
+                            <span className="sr-only">فتح القائمة</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </span>
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
