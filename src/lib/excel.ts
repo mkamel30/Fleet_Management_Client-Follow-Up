@@ -12,10 +12,7 @@ const convertToXLSX = (data: any[], headers: { key: string; label: string }[], s
 };
 
 export const downloadXLSX = (data: any[], headers: { key: string; label: string }[], filename: string, sheetName: string = 'Sheet1') => {
-  if (!data || data.length === 0) {
-    console.error("No data to export.");
-    return;
-  }
+  // Removed the check for empty data, as we want to allow downloading templates with just headers.
   const workbook = convertToXLSX(data, headers, sheetName);
   XLSX.writeFile(workbook, `${filename}.xlsx`);
 };
