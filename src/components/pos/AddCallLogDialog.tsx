@@ -25,7 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/SessionContext";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { PosClient } from "@/types/pos"; // Changed to PosClient
+import { PosClient } from "@/types/pos";
 import { DateInputPicker } from "@/components/ui/DateInputPicker";
 
 const callLogSchema = z.object({
@@ -36,7 +36,7 @@ const callLogSchema = z.object({
 type CallLogFormValues = z.infer<typeof callLogSchema>;
 
 interface AddCallLogDialogProps {
-  posClient: PosClient; // Changed to PosClient
+  posClient: PosClient;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
