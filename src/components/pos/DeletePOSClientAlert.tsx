@@ -7,19 +7,16 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { useQueryClient } from "@tanstack/react-query";
-import React from "react"; // Import React for ReactNode
 
 interface DeletePOSClientAlertProps {
   clientId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirmDelete: () => void; // New prop for the actual delete logic
+  onConfirmDelete: () => void;
 }
 
 export function DeletePOSClientAlert({ clientId, open, onOpenChange, onConfirmDelete }: DeletePOSClientAlertProps) {
@@ -33,7 +30,7 @@ export function DeletePOSClientAlert({ clientId, open, onOpenChange, onConfirmDe
     } else {
       showSuccess("تم حذف العميل بنجاح.");
       queryClient.invalidateQueries({ queryKey: ["posClients"] });
-      onConfirmDelete(); // Call the passed callback
+      onConfirmDelete();
     }
   };
 

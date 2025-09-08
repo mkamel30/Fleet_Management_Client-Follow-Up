@@ -32,7 +32,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { POSClient } from "@/types/pos";
+import { PosClient } from "@/types/pos"; // Changed to PosClient
 
 const posClientSchema = z.object({
   client_code: z.string().min(1, { message: "الكود مطلوب" }),
@@ -43,7 +43,7 @@ const posClientSchema = z.object({
 type POSClientFormValues = z.infer<typeof posClientSchema>;
 
 interface EditPOSClientDialogProps {
-  client: POSClient;
+  client: PosClient; // Changed to PosClient
   children: React.ReactNode;
 }
 

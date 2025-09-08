@@ -26,10 +26,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/SessionContext";
-import { POSClient } from "@/types/pos";
+import { PosClient } from "@/types/pos"; // Changed to PosClient
 import { Skeleton } from "@/components/ui/skeleton";
 import { MoreHorizontal, Edit, Trash2, Phone, History, PlusCircle, ArrowUp, ArrowDown, StickyNote } from "lucide-react";
 import { EditPOSClientDialog } from "./EditPOSClientDialog";
@@ -38,17 +38,16 @@ import { AddCallLogDialog } from "./AddCallLogDialog";
 import { CallLogHistoryDialog } from "./CallLogHistoryDialog";
 import { PosClientNotesDialog } from "./PosClientNotesDialog";
 import { showError, showSuccess } from "@/utils/toast";
-import { AlertDialog } from "@/components/ui/alert-dialog"; // Import AlertDialog for the delete confirmation
 
 type SortDirection = 'asc' | 'desc';
-type SortableClientKeys = keyof POSClient;
+type SortableClientKeys = keyof PosClient; // Changed to PosClient
 
 interface SortConfig {
   key: SortableClientKeys;
   direction: SortDirection;
 }
 
-const fetchPOSClients = async (searchTerm: string, departmentFilter: string): Promise<POSClient[]> => {
+const fetchPOSClients = async (searchTerm: string, departmentFilter: string): Promise<PosClient[]> => { // Changed to PosClient
   let query = supabase
     .from("pos_clients")
     .select("*")
@@ -75,7 +74,7 @@ export const POSClientsTable = ({ searchTerm, departmentFilter }: { searchTerm: 
 
   // State for managing delete alert
   const [isDeletePOSClientAlertOpen, setIsDeletePOSClientAlertOpen] = useState(false);
-  const [selectedPOSClientForAction, setSelectedPOSClientForAction] = useState<POSClient | null>(null);
+  const [selectedPOSClientForAction, setSelectedPOSClientForAction] = useState<PosClient | null>(null); // Changed to PosClient
 
   const {
     data: clients,

@@ -34,6 +34,7 @@ import { useSession } from "@/context/SessionContext";
 import { showSuccess, showError } from "@/utils/toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { PlusCircle } from "lucide-react";
+import { PosClient } from "@/types/pos"; // Import PosClient
 
 const posClientSchema = z.object({
   client_code: z.string().min(1, { message: "الكود مطلوب" }),
@@ -67,7 +68,7 @@ export const AddPOSClientDialog = () => {
       {
         ...values,
         user_id: session.user.id,
-      },
+      } as Omit<PosClient, 'id' | 'created_at' | 'updated_at'>, // Cast to Omit<PosClient, ...>
     ]);
 
     if (error) {

@@ -13,6 +13,7 @@ import { downloadCSV } from "@/lib/csv";
 import { showError, showLoading, dismissToast, showSuccess } from "@/utils/toast";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PosClient, PosCallLog } from "@/types/pos"; // Import PosClient, PosCallLog
 
 const DEPARTMENT_COLORS: { [key: string]: string } = {
   'تجزئة': '#3b82f6', // blue-500
@@ -107,7 +108,7 @@ const POSReportsPage = () => {
           { key: 'department', label: 'القسم' },
           { key: 'created_at', label: 'تاريخ الإنشاء' },
         ];
-        downloadCSV(clients, headers, `pos_clients_export_${dateFilter}`);
+        downloadCSV(clients as PosClient[], headers, `pos_clients_export_${dateFilter}`); // Cast to PosClient[]
       } else {
         const { data: posClientsData, error: posClientsError } = await supabase.from('pos_clients').select('id, client_name');
         if (posClientsError) throw posClientsError;
@@ -129,10 +130,11 @@ const POSReportsPage = () => {
           { key: 'client_name', label: 'اسم العميل' },
           { key: 'user_full_name', label: 'بواسطة' },
           { key: 'call_date', label: 'تاريخ المكالمة' },
-          { key: 'notes', label: 'الملاحظات' },
+          { key: 'call_summary', label: 'ملخص المكالمة' }, // Changed from notes to call_summary
+          { key: 'next_follow_up_date', label: 'تاريخ المتابعة التالية' }, // Added next_follow_up_date
           { key: 'created_at', label: 'تاريخ الإنشاء' },
         ];
-        downloadCSV(enrichedCallLogs, headers, `pos_call_logs_export_${dateFilter}`);
+        downloadCSV(enrichedCallLogs as PosCallLog[], headers, `pos_call_logs_export_${dateFilter}`); // Cast to PosCallLog[]
       }
       showSuccess('تم التصدير بنجاح!');
     } catch (err: any) {

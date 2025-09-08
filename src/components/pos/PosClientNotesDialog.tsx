@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/SessionContext";
-import { POSClient } from "@/types/pos";
+import { PosClient } from "@/types/pos"; // Changed to PosClient
 import { ClientNote } from "@/types/note"; // Reusing ClientNote type for simplicity
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -20,7 +20,7 @@ import { arSA } from "date-fns/locale";
 import { showError, showSuccess } from "@/utils/toast";
 
 interface PosClientNotesDialogProps {
-  posClient: POSClient;
+  posClient: PosClient; // Changed to PosClient
   children: React.ReactNode;
 }
 

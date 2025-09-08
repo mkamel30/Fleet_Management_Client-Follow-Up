@@ -17,6 +17,7 @@ import { Link } from "react-router-dom";
 import { POSClientsTable } from "@/components/pos/POSClientsTable";
 import { POSUploadDialog } from "@/components/pos/POSUploadDialog";
 import { AddPOSClientDialog } from "@/components/pos/AddPOSClientDialog";
+import { PosClient } from "@/types/pos"; // Import PosClient
 
 const POSPage = () => {
   const { session } = useSession();
