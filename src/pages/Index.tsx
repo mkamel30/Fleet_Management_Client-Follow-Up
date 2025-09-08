@@ -46,8 +46,10 @@ const Index = () => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon">
-                <User className="h-5 w-5" />
-                <span className="sr-only">قائمة المستخدم</span>
+                <span> {/* Wrapped children in a span */}
+                  <User className="h-5 w-5" />
+                  <span className="sr-only">قائمة المستخدم</span>
+                </span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
