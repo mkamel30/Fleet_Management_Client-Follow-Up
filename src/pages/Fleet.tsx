@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { AddClientDialog } from '@/components/clients/AddClientDialog';
 import { ClientsTable } from '@/components/clients/ClientsTable';
-import { Settings, User, LogOut, FileText, Phone } from 'lucide-react';
+import { Settings, User, LogOut, FileText, Phone, Home } from 'lucide-react';
 import { UpcomingFollowUps } from '@/components/notifications/UpcomingFollowUps';
 import {
   DropdownMenu,
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useSession } from '@/context/SessionContext';
 
-const Index = () => {
+const Fleet = () => {
   const { session } = useSession();
 
   const handleLogout = async () => {
@@ -42,6 +42,12 @@ const Index = () => {
             </Link>
           </Button>
           <AddClientDialog />
+          <Button asChild variant="outline">
+            <Link to="/">
+              <Home className="ml-2 h-4 w-4" />
+              العودة للصفحة الرئيسية
+            </Link>
+          </Button>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -83,4 +89,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Fleet;

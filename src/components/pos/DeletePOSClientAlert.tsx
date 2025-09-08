@@ -29,7 +29,6 @@ export function DeletePOSClientAlert({ clientId, open, onOpenChange }: DeletePOS
     } else {
       showSuccess("تم حذف العميل بنجاح.");
       queryClient.invalidateQueries({ queryKey: ["posClients"] });
-      queryClient.invalidateQueries({ queryKey: ["posDepartments"] });
       onOpenChange(false);
     }
   };

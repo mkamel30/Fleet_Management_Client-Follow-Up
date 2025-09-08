@@ -1,14 +1,30 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, FileText, Upload } from "lucide-react";
+import { ArrowRight, FileText, Upload, User, Settings, LogOut, Home } from "lucide-react";
 import { Link } from "react-router-dom";
 import { POSClientsTable } from "@/components/pos/POSClientsTable";
 import { POSUploadDialog } from "@/components/pos/POSUploadDialog";
 import { AddPOSClientDialog } from "@/components/pos/AddPOSClientDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { supabase } from '@/integrations/supabase/client';
+import { useSession } from '@/context/SessionContext';
 
 const POSPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const { session } = useSession();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    // The SessionProvider will handle the redirect automatically.
+  };
 
   return (
     <div dir="rtl" className="container mx-auto p-4 md:p-8">
@@ -33,12 +49,44 @@ const POSPage = () => {
             </Link>
           </Button>
           <AddPOSClientDialog />
-          <Button asChild>
-            <Link to="/fleet">
-              <ArrowRight className="ml-2 h-4 w-4" />
-              العودة للعملاء
+          <Button asChild variant="outline">
+            <Link to="/">
+              <Home className="ml-2 h-4 w-4" />
+              العودة للصفحة الرئيسية
             </Link>
           </Button>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <span>
+                  <User className="h-5 w-5" />
+                  <span className="sr-only">قائمة المستخدم</span>
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>حسابي</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/profile">
+                  <User className="ml-2 h-4 w-4" />
+                  <span>الملف الشخصي</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/settings">
+                  <Settings className="ml-2 h-4 w-4" />
+                  <span>الإعدادات</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="ml-2 h-4 w-4" />
+                <span>تسجيل الخروج</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
       

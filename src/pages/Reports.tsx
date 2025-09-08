@@ -9,7 +9,7 @@ import { ArrowRight, FileDown, Users, Target, CheckCircle, Activity, UserPlus, C
 import { Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, Cell } from 'recharts';
 import { startOfMonth, endOfMonth, subMonths, startOfToday, endOfToday } from 'date-fns';
-import { downloadCSV } from "@/lib/csv";
+import { downloadXLSX } from "@/lib/excel"; // Updated import
 import { showError, showLoading, dismissToast, showSuccess } from "@/utils/toast";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -122,7 +122,7 @@ const ReportsPage = () => {
           { key: 'status', label: 'الحالة' },
           { key: 'created_at', label: 'تاريخ الإنشاء' },
         ];
-        downloadCSV(clients, headers, `clients_export_${dateFilter}`);
+        downloadXLSX(clients, headers, `clients_export_${dateFilter}`);
       } else {
         const { data: clientsData, error: clientsError } = await supabase.from('clients').select('id, company_name');
         if (clientsError) throw clientsError;
@@ -148,7 +148,7 @@ const ReportsPage = () => {
           { key: 'created_at', label: 'تاريخ الإنشاء' },
           { key: 'full_name', label: 'بواسطة' },
         ];
-        downloadCSV(enrichedFollowUps, headers, `follow_ups_export_${dateFilter}`);
+        downloadXLSX(enrichedFollowUps, headers, `follow_ups_export_${dateFilter}`);
       }
       showSuccess('تم التصدير بنجاح!');
     } catch (err: any) {
@@ -299,7 +299,7 @@ const ReportsPage = () => {
             <Card>
               <CardHeader>
                 <CardTitle>تصدير البيانات</CardTitle>
-                <CardDescription>قم بتنزيل بيانات العملاء والمتابعات كملف CSV للفترة الزمنية المحددة.</CardDescription>
+                <CardDescription>قم بتنزيل بيانات العملاء والمتابعات كملف Excel للفترة الزمنية المحددة.</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col sm:flex-row gap-4">
                 <Button onClick={() => handleExport('clients')}>

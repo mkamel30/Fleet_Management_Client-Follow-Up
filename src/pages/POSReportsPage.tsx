@@ -6,35 +6,56 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, FileDown, Users, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
-import { downloadCSV } from "@/lib/csv";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, Cell } from 'recharts';
+import { downloadXLSX } from "@/lib/excel"; // Updated import
 import { showError, showLoading, dismissToast, showSuccess } from "@/utils/toast";
 import { Separator } from "@/components/ui/separator";
 
+const POS_STATUS_COLORS: { [key: string]: string } = {
+  'مهتم': '#22c55e', // green-500
+  'تم الإرسال للتعاقد': '#3b82f6', // blue-500
+  'غير مهتم': 'hsl(var(--destructive))',
+  'متابعة لاحقاً': '#f59e0b', // yellow-500
+  'جديد': '#9ca3af', // gray-400 (for clients with no call logs yet)
+};
+
 const fetchPOSAnalyticsData = async () => {
-  const { data: clients, error: clientsError } = await supabase.from('pos_clients').select('id, supply_management');
+  const { data: clientsWithStatus, error: clientsError } = await supabase.from('pos_clients_with_status').select('id, supply_management, last_status');
   if (clientsError) throw new Error(clientsError.message);
 
   const { count: callLogsCount, error: callLogsError } = await supabase.from('pos_call_logs').select('*', { count: 'exact', head: true });
   if (callLogsError) throw new Error(callLogsError.message);
 
-  const totalClients = clients.length;
+  const totalClients = clientsWithStatus.length;
 
-  const clientsBySupplyManagement = clients.reduce((acc, client) => {
+  const clientsBySupplyManagement = clientsWithStatus.reduce((acc, client) => {
     const supplyManagement = client.supply_management || 'غير محدد';
     acc[supplyManagement] = (acc[supplyManagement] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  const chartData = Object.entries(clientsBySupplyManagement).map(([name, value]) => ({
+  const clientsByStatus = clientsWithStatus.reduce((acc, client) => {
+    const status = client.last_status || 'جديد';
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const supplyManagementChartData = Object.entries(clientsBySupplyManagement).map(([name, value]) => ({
     name,
     'عدد العملاء': value,
+  }));
+
+  const statusChartData = Object.entries(clientsByStatus).map(([name, value]) => ({
+    name,
+    'عدد العملاء': value,
+    fill: POS_STATUS_COLORS[name] || 'hsl(var(--primary))',
   }));
 
   return {
     totalClients,
     totalCallLogs: callLogsCount || 0,
-    chartData,
+    supplyManagementChartData,
+    statusChartData,
   };
 };
 
@@ -53,16 +74,17 @@ const POSReportsPage = () => {
     
     try {
       if (type === 'clients') {
-        const { data: clients, error } = await supabase.from('pos_clients').select('*');
+        const { data: clients, error } = await supabase.from('pos_clients_with_status').select('*');
         if (error) throw error;
         const headers = [
           { key: 'client_code', label: 'كود العميل' },
           { key: 'client_name', label: 'اسم العميل' },
           { key: 'supply_management', label: 'الإدارة التموينية' },
           { key: 'phone', label: 'رقم التليفون' },
+          { key: 'last_status', label: 'آخر حالة' },
           { key: 'created_at', label: 'تاريخ الإنشاء' },
         ];
-        downloadCSV(clients, headers, `pos_clients_export`);
+        downloadXLSX(clients, headers, `pos_clients_export`);
       } else {
         const { data: clientsData, error: clientsError } = await supabase.from('pos_clients').select('id, client_name, client_code');
         if (clientsError) throw clientsError;
@@ -86,7 +108,7 @@ const POSReportsPage = () => {
           { key: 'created_at', label: 'تاريخ الإنشاء' },
           { key: 'user_full_name', label: 'بواسطة' },
         ];
-        downloadCSV(enrichedLogs, headers, `pos_call_logs_export`);
+        downloadXLSX(enrichedLogs, headers, `pos_call_logs_export`);
       }
       showSuccess('تم التصدير بنجاح!');
     } catch (err: any) {
@@ -158,7 +180,7 @@ const POSReportsPage = () => {
               </CardHeader>
               <CardContent className="pl-2">
                 <ResponsiveContainer width="100%" height={350}>
-                  <BarChart data={data.chartData}>
+                  <BarChart data={data.supplyManagementChartData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
@@ -172,13 +194,40 @@ const POSReportsPage = () => {
             </Card>
           </section>
 
+          <section>
+            <Card>
+              <CardHeader>
+                <CardTitle>توزيع العملاء حسب الحالة</CardTitle>
+                <CardDescription>
+                  نظرة عامة على حالة عملاء نقاط البيع الحاليين.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pl-2">
+                <ResponsiveContainer width="100%" height={350}>
+                  <BarChart data={data.statusChartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
+                    <Tooltip wrapperClassName="!bg-background !border-border" cursor={{ fill: 'hsl(var(--muted))' }} />
+                    <Bar dataKey="عدد العملاء" radius={[4, 4, 0, 0]}>
+                      <LabelList dataKey="عدد العملاء" position="top" style={{ fill: 'hsl(var(--foreground))', fontSize: 12 }} />
+                      {data.statusChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </section>
+
           <Separator />
 
           <section>
             <Card>
               <CardHeader>
                 <CardTitle>تصدير البيانات</CardTitle>
-                <CardDescription>قم بتنزيل بيانات عملاء نقاط البيع وسجل المكالمات كملف CSV.</CardDescription>
+                <CardDescription>قم بتنزيل بيانات عملاء نقاط البيع وسجل المكالمات كملف Excel.</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col sm:flex-row gap-4">
                 <Button onClick={() => handleExport('clients')}>

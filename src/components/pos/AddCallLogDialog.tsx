@@ -82,6 +82,7 @@ export const AddCallLogDialog = ({ client, open, onOpenChange }: AddCallLogDialo
     } else {
       toast.success("تم تسجيل المكالمة بنجاح!");
       queryClient.invalidateQueries({ queryKey: ["posCallLogs", client.id] });
+      queryClient.invalidateQueries({ queryKey: ["posClients"] }); // Invalidate posClients to refresh status badge
       form.reset();
       onOpenChange(false);
     }
