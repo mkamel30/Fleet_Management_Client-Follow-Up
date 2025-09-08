@@ -34,7 +34,7 @@ const POSPage = () => {
           </Button>
           <AddPOSClientDialog />
           <Button asChild>
-            <Link to="/">
+            <Link to="/fleet">
               <ArrowRight className="ml-2 h-4 w-4" />
               العودة للعملاء
             </Link>

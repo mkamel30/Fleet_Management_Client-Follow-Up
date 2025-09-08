@@ -11,7 +11,7 @@ const Settings = () => {
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-2xl font-bold">إعدادات القوالب</h1>
         <Button asChild variant="outline">
-          <Link to="/">
+          <Link to="/fleet">
             <ArrowRight className="ml-2 h-4 w-4" />
             العودة إلى العملاء
           </Link>
