@@ -16,6 +16,7 @@ import { PosClient } from "@/types/pos";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { POSClientActions } from "./POSClientActions";
+import { Badge } from "@/components/ui/badge";
 
 type SortDirection = 'asc' | 'desc';
 type SortableKeys = keyof PosClient;
@@ -31,12 +32,27 @@ interface POSClientsTableProps {
 
 const fetchPOSClients = async (): Promise<PosClient[]> => {
   const { data, error } = await supabase
-    .from("pos_clients")
+    .from("pos_clients_with_status")
     .select("*")
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
-  return data;
+  return data as PosClient[];
+};
+
+const getPOSStatusBadgeClass = (status: string | null) => {
+  switch (status) {
+    case 'مهتم':
+      return 'bg-green-500 text-white hover:bg-green-500/90 border-transparent';
+    case 'تم الإرسال للتعاقد':
+      return 'bg-blue-500 text-white hover:bg-blue-500/90 border-transparent';
+    case 'غير مهتم':
+      return 'bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent';
+    case 'متابعة لاحقاً':
+      return 'bg-yellow-500 text-white hover:bg-yellow-500/90 border-transparent';
+    default:
+      return 'bg-gray-400 text-white hover:bg-gray-400/90 border-transparent';
+  }
 };
 
 export const POSClientsTable = ({ searchTerm }: POSClientsTableProps) => {
@@ -138,6 +154,11 @@ export const POSClientsTable = ({ searchTerm }: POSClientsTableProps) => {
                   رقم التليفون {getSortIcon('phone')}
                 </Button>
               </TableHead>
+              <TableHead className="text-right">
+                <Button variant="ghost" onClick={() => requestSort('last_status')}>
+                  الحالة {getSortIcon('last_status')}
+                </Button>
+              </TableHead>
               <TableHead className="text-right">الإجراءات</TableHead>
             </TableRow>
           </TableHeader>
@@ -150,13 +171,22 @@ export const POSClientsTable = ({ searchTerm }: POSClientsTableProps) => {
                   <TableCell>{client.supply_management || "-"}</TableCell>
                   <TableCell>{client.phone || "-"}</TableCell>
                   <TableCell>
+                    {client.last_status ? (
+                      <Badge className={getPOSStatusBadgeClass(client.last_status)}>
+                        {client.last_status}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
                     <POSClientActions client={client} />
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={6} className="h-24 text-center">
                   {clients && clients.length > 0 ? "لم يتم العثور على عملاء يطابقون بحثك." : "لا يوجد عملاء حتى الآن."}
                 </TableCell>
               </TableRow>
