@@ -17,7 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { showError, showSuccess } from "@/utils/toast";
 import * as XLSX from 'xlsx';
 import { supabase } from "@/integrations/supabase/client";
-import { POSClient } from "@/types/pos";
+import { PosClient } from "@/types/pos";
 
 interface POSUploadDialogProps {
   children: React.ReactNode;
@@ -59,7 +59,7 @@ export const POSUploadDialog = ({ children }: POSUploadDialogProps) => {
         const worksheet = workbook.Sheets[sheetName];
         const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
-        const clientsToInsert: Omit<POSClient, 'id' | 'created_at'>[] = json.map((row: any) => ({
+        const clientsToInsert: Omit<PosClient, 'id' | 'created_at' | 'updated_at'>[] = json.map((row: any) => ({
           user_id: session.user!.id,
           client_code: String(row['كود العميل'] || '').trim(),
           client_name: String(row['اسم العميل'] || '').trim(),
@@ -76,8 +76,8 @@ export const POSUploadDialog = ({ children }: POSUploadDialogProps) => {
         const { data: insertedClients, error: insertError } = await supabase
           .from('pos_clients')
           .insert(clientsToInsert)
-          .onConflict('client_code') // onConflict should be before select()
-          .ignore() // Ignore rows that cause a conflict on client_code
+          .onConflict('client_code')
+          .ignore()
           .select('id, client_code');
 
         if (insertError) {
