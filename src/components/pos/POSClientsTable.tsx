@@ -27,7 +27,6 @@ interface SortConfig {
 
 interface POSClientsTableProps {
   searchTerm: string;
-  departmentFilter: string;
 }
 
 const fetchPOSClients = async (): Promise<PosClient[]> => {
@@ -40,7 +39,7 @@ const fetchPOSClients = async (): Promise<PosClient[]> => {
   return data;
 };
 
-export const POSClientsTable = ({ searchTerm, departmentFilter }: POSClientsTableProps) => {
+export const POSClientsTable = ({ searchTerm }: POSClientsTableProps) => {
   const { session } = useSession();
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
 
@@ -59,13 +58,9 @@ export const POSClientsTable = ({ searchTerm, departmentFilter }: POSClientsTabl
     if (!clients) return [];
     
     let filtered = clients.filter(client => {
-      const matchesDepartment = departmentFilter === 'all' || client.department === departmentFilter;
-      
-      const matchesSearch = searchTerm.trim() === '' ||
+      return searchTerm.trim() === '' ||
         client.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         client.client_code.toLowerCase().includes(searchTerm.toLowerCase());
-        
-      return matchesDepartment && matchesSearch;
     });
 
     if (sortConfig !== null) {
@@ -87,7 +82,7 @@ export const POSClientsTable = ({ searchTerm, departmentFilter }: POSClientsTabl
     }
 
     return filtered;
-  }, [clients, searchTerm, departmentFilter, sortConfig]);
+  }, [clients, searchTerm, sortConfig]);
 
   const requestSort = (key: SortableKeys) => {
     let direction: SortDirection = 'asc';
@@ -134,8 +129,13 @@ export const POSClientsTable = ({ searchTerm, departmentFilter }: POSClientsTabl
                 </Button>
               </TableHead>
               <TableHead className="text-right">
-                <Button variant="ghost" onClick={() => requestSort('department')}>
-                  القسم {getSortIcon('department')}
+                <Button variant="ghost" onClick={() => requestSort('supply_management')}>
+                  الإدارة التموينية {getSortIcon('supply_management')}
+                </Button>
+              </TableHead>
+              <TableHead className="text-right">
+                <Button variant="ghost" onClick={() => requestSort('phone')}>
+                  رقم التليفون {getSortIcon('phone')}
                 </Button>
               </TableHead>
               <TableHead className="text-right">الإجراءات</TableHead>
@@ -147,7 +147,8 @@ export const POSClientsTable = ({ searchTerm, departmentFilter }: POSClientsTabl
                 <TableRow key={client.id}>
                   <TableCell className="font-medium">{client.client_code}</TableCell>
                   <TableCell>{client.client_name}</TableCell>
-                  <TableCell>{client.department || "-"}</TableCell>
+                  <TableCell>{client.supply_management || "-"}</TableCell>
+                  <TableCell>{client.phone || "-"}</TableCell>
                   <TableCell>
                     <POSClientActions client={client} />
                   </TableCell>
@@ -155,7 +156,7 @@ export const POSClientsTable = ({ searchTerm, departmentFilter }: POSClientsTabl
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
+                <TableCell colSpan={5} className="h-24 text-center">
                   {clients && clients.length > 0 ? "لم يتم العثور على عملاء يطابقون بحثك." : "لا يوجد عملاء حتى الآن."}
                 </TableCell>
               </TableRow>

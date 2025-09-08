@@ -12,13 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Form,
   FormControl,
   FormField,
@@ -39,7 +32,8 @@ import { PosClient } from "@/types/pos";
 const posClientSchema = z.object({
   client_code: z.string().min(1, { message: "الكود مطلوب" }),
   client_name: z.string().min(1, { message: "اسم العميل مطلوب" }),
-  department: z.string().optional(),
+  supply_management: z.string().optional(),
+  phone: z.string().optional(),
 });
 
 type POSClientFormValues = z.infer<typeof posClientSchema>;
@@ -54,7 +48,8 @@ export const AddPOSClientDialog = () => {
     defaultValues: {
       client_code: "",
       client_name: "",
-      department: "",
+      supply_management: "",
+      phone: "",
     },
   });
 
@@ -76,7 +71,6 @@ export const AddPOSClientDialog = () => {
     } else {
       showSuccess("تمت إضافة العميل بنجاح!");
       queryClient.invalidateQueries({ queryKey: ["posClients"] });
-      queryClient.invalidateQueries({ queryKey: ["posDepartments"] });
       form.reset();
       setOpen(false);
     }
@@ -129,23 +123,26 @@ export const AddPOSClientDialog = () => {
             />
             <FormField
               control={form.control}
-              name="department"
+              name="supply_management"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>القسم</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="اختر القسم" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="تجزئة">تجزئة</SelectItem>
-                      <SelectItem value="خدمات">خدمات</SelectItem>
-                      <SelectItem value="صناعة">صناعة</SelectItem>
-                      <SelectItem value="حكومي">حكومي</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>الإدارة التموينية</FormLabel>
+                  <FormControl>
+                    <Input placeholder="اسم الإدارة التموينية" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>رقم التليفون</FormLabel>
+                  <FormControl>
+                    <Input placeholder="رقم التليفون" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

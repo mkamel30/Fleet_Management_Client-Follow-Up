@@ -3,7 +3,8 @@ export interface PosClient {
   user_id: string;
   client_code: string;
   client_name: string;
-  department: string | null;
+  supply_management: string | null;
+  phone: string | null;
   created_at: string;
   updated_at: string;
 }

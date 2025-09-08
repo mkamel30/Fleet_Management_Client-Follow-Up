@@ -25,7 +25,8 @@ interface POSUploadDialogProps {
 type ClientData = {
   'client_code': string;
   'client_name': string;
-  'department'?: string;
+  'supply_management'?: string;
+  'phone'?: string;
 };
 
 export const POSUploadDialog = ({ children }: POSUploadDialogProps) => {
@@ -63,7 +64,8 @@ export const POSUploadDialog = ({ children }: POSUploadDialogProps) => {
           user_id: session.user.id,
           client_code: String(row.client_code),
           client_name: String(row.client_name),
-          department: row.department ? String(row.department) : null,
+          supply_management: row.supply_management ? String(row.supply_management) : null,
+          phone: row.phone ? String(row.phone) : null,
         }));
 
         const { error } = await supabase.from('pos_clients').upsert(
@@ -79,7 +81,6 @@ export const POSUploadDialog = ({ children }: POSUploadDialogProps) => {
 
         showSuccess(`تم رفع ومعالجة ${json.length} عميل بنجاح.`);
         queryClient.invalidateQueries({ queryKey: ["posClients"] });
-        queryClient.invalidateQueries({ queryKey: ["posDepartments"] });
         setFile(null);
         setOpen(false);
       } catch (err: any) {
@@ -99,7 +100,7 @@ export const POSUploadDialog = ({ children }: POSUploadDialogProps) => {
         <DialogHeader>
           <DialogTitle>رفع عملاء من ملف Excel</DialogTitle>
           <DialogDescription>
-            اختر ملف Excel لرفع العملاء دفعة واحدة. يجب أن يحتوي الملف على أعمدة بالأسماء التالية: client_code, client_name, department (اختياري).
+            اختر ملف Excel لرفع العملاء دفعة واحدة. يجب أن يحتوي الملف على أعمدة بالأسماء التالية: client_code, client_name, supply_management (اختياري), phone (اختياري).
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">

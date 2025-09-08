@@ -1,19 +1,18 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/SessionContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, FileDown, Users, Phone, Building } from "lucide-react";
+import { ArrowRight, FileDown, Users, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import { downloadCSV } from "@/lib/csv";
 import { showError, showLoading, dismissToast, showSuccess } from "@/utils/toast";
 import { Separator } from "@/components/ui/separator";
 
 const fetchPOSAnalyticsData = async () => {
-  const { data: clients, error: clientsError } = await supabase.from('pos_clients').select('id, department');
+  const { data: clients, error: clientsError } = await supabase.from('pos_clients').select('id, supply_management');
   if (clientsError) throw new Error(clientsError.message);
 
   const { count: callLogsCount, error: callLogsError } = await supabase.from('pos_call_logs').select('*', { count: 'exact', head: true });
@@ -21,13 +20,13 @@ const fetchPOSAnalyticsData = async () => {
 
   const totalClients = clients.length;
 
-  const clientsByDepartment = clients.reduce((acc, client) => {
-    const department = client.department || 'غير محدد';
-    acc[department] = (acc[department] || 0) + 1;
+  const clientsBySupplyManagement = clients.reduce((acc, client) => {
+    const supplyManagement = client.supply_management || 'غير محدد';
+    acc[supplyManagement] = (acc[supplyManagement] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  const chartData = Object.entries(clientsByDepartment).map(([name, value]) => ({
+  const chartData = Object.entries(clientsBySupplyManagement).map(([name, value]) => ({
     name,
     'عدد العملاء': value,
   }));
@@ -59,7 +58,8 @@ const POSReportsPage = () => {
         const headers = [
           { key: 'client_code', label: 'كود العميل' },
           { key: 'client_name', label: 'اسم العميل' },
-          { key: 'department', label: 'القسم' },
+          { key: 'supply_management', label: 'الإدارة التموينية' },
+          { key: 'phone', label: 'رقم التليفون' },
           { key: 'created_at', label: 'تاريخ الإنشاء' },
         ];
         downloadCSV(clients, headers, `pos_clients_export`);
@@ -151,9 +151,9 @@ const POSReportsPage = () => {
           <section>
             <Card>
               <CardHeader>
-                <CardTitle>توزيع العملاء حسب القسم</CardTitle>
+                <CardTitle>توزيع العملاء حسب الإدارة التموينية</CardTitle>
                 <CardDescription>
-                  نظرة عامة على أقسام عملائك.
+                  نظرة عامة على الإدارات التموينية لعملائك.
                 </CardDescription>
               </CardHeader>
               <CardContent className="pl-2">

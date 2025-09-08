@@ -1,16 +1,6 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useSession } from "@/context/SessionContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ArrowRight, FileText, Upload } from "lucide-react";
 import { Link } from "react-router-dom";
 import { POSClientsTable } from "@/components/pos/POSClientsTable";
@@ -18,25 +8,7 @@ import { POSUploadDialog } from "@/components/pos/POSUploadDialog";
 import { AddPOSClientDialog } from "@/components/pos/AddPOSClientDialog";
 
 const POSPage = () => {
-  const { session } = useSession();
   const [searchTerm, setSearchTerm] = useState("");
-  const [departmentFilter, setDepartmentFilter] = useState("all");
-
-  const { data: departments, isLoading: isLoadingDepartments } = useQuery({
-    queryKey: ["posDepartments"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("pos_clients")
-        .select("department")
-        .not("department", "is", null)
-        .order("department");
-
-      if (error) throw new Error(error.message);
-      const uniqueDepartments = Array.from(new Set(data.map(item => item.department).filter(Boolean)));
-      return uniqueDepartments;
-    },
-    enabled: !!session?.user?.id,
-  });
 
   return (
     <div dir="rtl" className="container mx-auto p-4 md:p-8">
@@ -77,27 +49,10 @@ const POSPage = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full sm:max-w-sm"
         />
-        <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="فلترة حسب القسم" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">كل الأقسام</SelectItem>
-            {isLoadingDepartments ? (
-              <SelectItem value="loading" disabled>جاري التحميل...</SelectItem>
-            ) : (
-              departments?.map((dept) => (
-                <SelectItem key={dept} value={dept}>
-                  {dept}
-                </SelectItem>
-              ))
-            )}
-          </SelectContent>
-        </Select>
       </div>
 
       <main>
-        <POSClientsTable searchTerm={searchTerm} departmentFilter={departmentFilter} />
+        <POSClientsTable searchTerm={searchTerm} />
       </main>
     </div>
   );
