@@ -38,6 +38,7 @@ import { AddCallLogDialog } from "./AddCallLogDialog";
 import { CallLogHistoryDialog } from "./CallLogHistoryDialog";
 import { PosClientNotesDialog } from "./PosClientNotesDialog";
 import { showError, showSuccess } from "@/utils/toast";
+import { AlertDialog } from "@/components/ui/alert-dialog"; // Import AlertDialog for the delete confirmation
 
 type SortDirection = 'asc' | 'desc';
 type SortableClientKeys = keyof POSClient;
@@ -71,6 +72,10 @@ export const POSClientsTable = ({ searchTerm, departmentFilter }: { searchTerm: 
   const { session } = useSession();
   const queryClient = useQueryClient();
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+
+  // State for managing delete alert
+  const [isDeletePOSClientAlertOpen, setIsDeletePOSClientAlertOpen] = useState(false);
+  const [selectedPOSClientForAction, setSelectedPOSClientForAction] = useState<POSClient | null>(null);
 
   const {
     data: clients,
@@ -126,6 +131,10 @@ export const POSClientsTable = ({ searchTerm, departmentFilter }: { searchTerm: 
     ) : (
       <ArrowDown className="ml-1 h-4 w-4" />
     );
+  };
+
+  const handleConfirmDeletePOSClient = () => {
+    setIsDeletePOSClientAlertOpen(false); // Close alert after delete action
   };
 
   if (isLoading) {
@@ -214,12 +223,17 @@ export const POSClientsTable = ({ searchTerm, departmentFilter }: { searchTerm: 
                           </DropdownMenuItem>
                         </EditPOSClientDialog>
                         <DropdownMenuSeparator />
-                        <DeletePOSClientAlert clientId={client.id}>
-                          <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600 focus:text-red-600">
-                            <Trash2 className="ml-2 h-4 w-4" />
-                            <span>حذف</span>
-                          </DropdownMenuItem>
-                        </DeletePOSClientAlert>
+                        <DropdownMenuItem 
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            setSelectedPOSClientForAction(client);
+                            setIsDeletePOSClientAlertOpen(true);
+                          }}
+                          className="text-red-600 focus:text-red-600"
+                        >
+                          <Trash2 className="ml-2 h-4 w-4" />
+                          <span>حذف</span>
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -235,6 +249,16 @@ export const POSClientsTable = ({ searchTerm, departmentFilter }: { searchTerm: 
           </TableBody>
         </Table>
       </div>
+
+      {/* Delete POS Client Alert Dialog */}
+      {selectedPOSClientForAction && (
+        <DeletePOSClientAlert 
+          clientId={selectedPOSClientForAction.id} 
+          open={isDeletePOSClientAlertOpen} 
+          onOpenChange={setIsDeletePOSClientAlertOpen}
+          onConfirmDelete={handleConfirmDeletePOSClient}
+        />
+      )}
     </div>
   );
 };
