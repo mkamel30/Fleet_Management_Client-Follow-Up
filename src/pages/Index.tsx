@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { AddClientDialog } from '@/components/clients/AddClientDialog';
 import { ClientsTable } from '@/components/clients/ClientsTable';
-import { Settings, User, LogOut, FileText, CreditCard } from 'lucide-react'; // Added CreditCard icon
+import { Settings, User, LogOut, FileText } from 'lucide-react';
 import { UpcomingFollowUps } from '@/components/notifications/UpcomingFollowUps';
 import {
   DropdownMenu,
@@ -35,18 +35,12 @@ const Index = () => {
               التقارير
             </Link>
           </Button>
-          <Button asChild variant="outline"> {/* New button for POS Payments */}
-            <Link to="/pos">
-              <CreditCard className="ml-2 h-4 w-4" />
-              نقاط البيع
-            </Link>
-          </Button>
           <AddClientDialog />
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon">
-                <span> {/* Wrapped children in a span */}
+                <span>
                   <User className="h-5 w-5" />
                   <span className="sr-only">قائمة المستخدم</span>
                 </span>
