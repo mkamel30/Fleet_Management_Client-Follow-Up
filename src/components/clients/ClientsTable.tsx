@@ -382,35 +382,45 @@ export const ClientsTable = () => {
                         <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
                         <AddFollowUpDialog client={client}>
                             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <PlusCircle className="ml-2 h-4 w-4" />
-                                <span>إضافة متابعة</span>
+                                <span className="flex items-center">
+                                    <PlusCircle className="ml-2 h-4 w-4" />
+                                    <span>إضافة متابعة</span>
+                                </span>
                             </DropdownMenuItem>
                         </AddFollowUpDialog>
                         <FollowUpHistoryDialog client={client}>
                             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <History className="ml-2 h-4 w-4" />
-                                <span>عرض السجل</span>
+                                <span className="flex items-center">
+                                    <History className="ml-2 h-4 w-4" />
+                                    <span>عرض السجل</span>
+                                </span>
                             </DropdownMenuItem>
                         </FollowUpHistoryDialog>
                         <ClientNotesDialog client={client}>
                           <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                            <StickyNote className="ml-2 h-4 w-4" />
-                            <span>الملاحظات</span>
+                            <span className="flex items-center">
+                                <StickyNote className="ml-2 h-4 w-4" />
+                                <span>الملاحظات</span>
+                            </span>
                           </DropdownMenuItem>
                         </ClientNotesDialog>
                         <DropdownMenuSeparator />
                         <EditClientDialog client={client}>
                           <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                            <Edit className="ml-2 h-4 w-4" />
-                            <span>تعديل</span>
+                            <span className="flex items-center">
+                                <Edit className="ml-2 h-4 w-4" />
+                                <span>تعديل</span>
+                            </span>
                           </DropdownMenuItem>
                         </EditClientDialog>
                         {client.email && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <Mail className="ml-2 h-4 w-4" />
-                                <span>إرسال بريد إلكتروني</span>
+                                <span className="flex items-center">
+                                    <Mail className="ml-2 h-4 w-4" />
+                                    <span>إرسال بريد إلكتروني</span>
+                                </span>
                               </DropdownMenuItem>
                             </AlertDialogTrigger>
                             <AlertDialogContent dir="rtl">
@@ -433,8 +443,10 @@ export const ClientsTable = () => {
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <MessageSquare className="ml-2 h-4 w-4" />
-                                <span>إرسال واتساب</span>
+                                <span className="flex items-center">
+                                    <MessageSquare className="ml-2 h-4 w-4" />
+                                    <span>إرسال واتساب</span>
+                                </span>
                               </DropdownMenuItem>
                             </AlertDialogTrigger>
                             <AlertDialogContent dir="rtl">
@@ -456,8 +468,10 @@ export const ClientsTable = () => {
                         <DropdownMenuSeparator />
                         <DeleteClientAlert clientId={client.id}>
                           <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600 focus:text-red-600">
-                            <Trash2 className="ml-2 h-4 w-4" />
-                            <span>حذف</span>
+                            <span className="flex items-center">
+                                <Trash2 className="ml-2 h-4 w-4" />
+                                <span>حذف</span>
+                            </span>
                           </DropdownMenuItem>
                         </DeleteClientAlert>
                       </DropdownMenuContent>

@@ -198,27 +198,35 @@ export const POSClientsTable = ({ searchTerm, departmentFilter }: { searchTerm: 
                         <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
                         <AddCallLogDialog posClient={client}>
                           <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                            <Phone className="ml-2 h-4 w-4" />
-                            <span>إضافة مكالمة</span>
+                            <span className="flex items-center">
+                                <Phone className="ml-2 h-4 w-4" />
+                                <span>إضافة مكالمة</span>
+                            </span>
                           </DropdownMenuItem>
                         </AddCallLogDialog>
                         <CallLogHistoryDialog posClient={client}>
                           <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                            <History className="ml-2 h-4 w-4" />
-                            <span>سجل المكالمات</span>
+                            <span className="flex items-center">
+                                <History className="ml-2 h-4 w-4" />
+                                <span>سجل المكالمات</span>
+                            </span>
                           </DropdownMenuItem>
                         </CallLogHistoryDialog>
                         <PosClientNotesDialog posClient={client}>
                           <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                            <StickyNote className="ml-2 h-4 w-4" />
-                            <span>الملاحظات</span>
+                            <span className="flex items-center">
+                                <StickyNote className="ml-2 h-4 w-4" />
+                                <span>الملاحظات</span>
+                            </span>
                           </DropdownMenuItem>
                         </PosClientNotesDialog>
                         <DropdownMenuSeparator />
                         <EditPOSClientDialog client={client}>
                           <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                            <Edit className="ml-2 h-4 w-4" />
-                            <span>تعديل</span>
+                            <span className="flex items-center">
+                                <Edit className="ml-2 h-4 w-4" />
+                                <span>تعديل</span>
+                            </span>
                           </DropdownMenuItem>
                         </EditPOSClientDialog>
                         <DropdownMenuSeparator />
@@ -230,8 +238,10 @@ export const POSClientsTable = ({ searchTerm, departmentFilter }: { searchTerm: 
                           }}
                           className="text-red-600 focus:text-red-600"
                         >
-                          <Trash2 className="ml-2 h-4 w-4" />
-                          <span>حذف</span>
+                          <span className="flex items-center">
+                            <Trash2 className="ml-2 h-4 w-4" />
+                            <span>حذف</span>
+                          </span>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
