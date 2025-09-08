@@ -17,6 +17,8 @@ import { useSession } from "@/context/SessionContext";
 import { showLoading, dismissToast, showSuccess, showError } from "@/utils/toast";
 import * as XLSX from 'xlsx';
 import { PosClient } from "@/types/pos";
+import { FileDown } from "lucide-react";
+import { downloadXLSX } from "@/lib/excel";
 
 interface POSUploadDialogProps {
   children: ReactNode;
@@ -93,6 +95,17 @@ export const POSUploadDialog = ({ children }: POSUploadDialogProps) => {
     reader.readAsArrayBuffer(file);
   };
 
+  const handleDownloadTemplate = () => {
+    const headers = [
+      { key: 'client_code', label: 'client_code' },
+      { key: 'client_name', label: 'client_name' },
+      { key: 'supply_management', label: 'supply_management' },
+      { key: 'phone', label: 'phone' },
+    ];
+    downloadXLSX([], headers, 'pos_clients_template');
+    showSuccess("تم تنزيل قالب Excel.");
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
@@ -103,11 +116,15 @@ export const POSUploadDialog = ({ children }: POSUploadDialogProps) => {
             اختر ملف Excel لرفع العملاء دفعة واحدة. يجب أن يحتوي الملف على أعمدة بالأسماء التالية: client_code, client_name, supply_management (اختياري), phone (اختياري).
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4">
+        <div className="py-4 space-y-4">
           <Input type="file" accept=".xlsx, .xls" onChange={handleFileChange} />
           <p className="text-xs text-muted-foreground mt-2">
             سيتم تحديث العملاء الحاليين إذا تم العثور على client_code مطابق.
           </p>
+          <Button variant="outline" onClick={handleDownloadTemplate} className="w-full">
+            <FileDown className="ml-2 h-4 w-4" />
+            تنزيل قالب Excel
+          </Button>
         </div>
         <DialogFooter>
           <Button onClick={handleUpload} disabled={!file || isUploading}>
