@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Bell, Trash2 } from "lucide-react";
 import { format, isToday, isTomorrow } from "date-fns";
 import { arSA } from "date-fns/locale";
-import React from "react"; // Import React for Fragment
 
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/SessionContext";
@@ -99,15 +98,15 @@ export const UpcomingFollowUps = () => {
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
-          <React.Fragment> {/* Wrap children in a fragment */}
+          <span>
             <Bell className="h-5 w-5" />
             {followUps && followUps.length > 0 && (
               <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-xs">
                 {followUps.length}
               </Badge>
             )}
-            <span className="sr-only">فتح الإشعارات</span> {/* Re-added for accessibility */}
-          </React.Fragment>
+            <span className="sr-only">فتح الإشعارات</span>
+          </span>
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0" dir="rtl">
