@@ -129,13 +129,16 @@ export const AddCallLogDialog = ({ client, open, onOpenChange }: AddCallLogDialo
                       <SelectItem value="غير مهتم">غير مهتم</SelectItem>
                       <SelectItem value="متابعة لاحقاً">متابعة لاحقاً</SelectItem>
                       <SelectItem value="تم الإرسال للتعاقد">تم الإرسال للتعاقد</SelectItem>
+                      <SelectItem value="احضار خطاب المديرية">احضار خطاب المديرية</SelectItem>
+                      <SelectItem value="تم الشراء">تم الشراء</SelectItem>
+                      <SelectItem value="تم الرفض">تم الرفض</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            {status === "متابعة لاحقاً" && (
+            {(status === "متابعة لاحقاً" || status === "احضار خطاب المديرية") && (
               <FormField
                 control={form.control}
                 name="next_follow_up_date"
