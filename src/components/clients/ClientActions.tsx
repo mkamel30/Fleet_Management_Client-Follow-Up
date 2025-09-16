@@ -53,6 +53,8 @@ export const ClientActions = ({ client, emailTemplate, whatsappTemplate }: Clien
   const logActionAsFollowUp = async (client: Client, type: 'email' | 'whatsapp') => {
     if (!session?.user) return;
 
+    const localUserName = localStorage.getItem(`local_user_name_${session.user.id}`) || session.user.email || "مستخدم غير معروف";
+
     const feedbackMessage = type === 'email' 
         ? 'تم إرسال بريد إلكتروني باستخدام القالب.' 
         : 'تم إرسال رسالة واتساب باستخدام القالب.';
@@ -62,6 +64,7 @@ export const ClientActions = ({ client, emailTemplate, whatsappTemplate }: Clien
         user_id: session.user.id,
         feedback: feedbackMessage,
         status: client.status || 'متابعة مستمرة',
+        user_full_name: localUserName, // Add the user's full name here
     });
 
     if (error) {
